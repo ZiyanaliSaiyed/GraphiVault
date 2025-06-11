@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script>
+        tailwind.config = {
+            daisyui: {
+                themes: [
+                    {
+                        "graphivault": {
+                            primary: '#3b82f6',
+                            secondary: '#10b981',
+                            accent: '#8b5cf6',
+                            neutral: '#0D1117',
+                            'base-100': '#0D1117',
+                            'base-200': '#161B22',
+                            'base-300': '#21262d',
+                            'base-content': '#E5E7EB',
+                            info: '#06b6d4',
+                            success: '#10b981',
+                            warning: '#f59e0b',
+                            error: '#ef4444',
+                        },
+                        "graphivault-light": {
+                            primary: '#3b82f6',
+                            secondary: '#10b981',
+                            accent: '#8b5cf6',
+                            neutral: '#1f2937',
+                            'base-100': '#ffffff',
+                            'base-200': '#f8fafc',
+                            'base-300': '#e2e8f0',
+                            'base-content': '#1e293b',
+                            info: '#0ea5e9',
+                            success: '#10b981',
+                            warning: '#f59e0b',
+                            error: '#ef4444',
+                        },
+                    },
+                ],
+                darkTheme: 'graphivault',
+            }
+        }
+    </script>
+</head>
+<body data-theme="graphivault" class="min-h-screen">
+    <div class="min-h-screen bg-base-100 text-base-content p-8">
+        <div class="max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold mb-8">GraphiVault Theme Test</h1>
+            
+            <div class="card bg-base-200 shadow-xl p-6 mb-6">
+                <h2 class="text-2xl font-semibold mb-4">Theme Toggle Test</h2>
+                <p class="mb-4">Current theme: <span id="current-theme" class="font-mono">graphivault</span></p>
+                
+                <button onclick="toggleTheme()" class="btn btn-primary">
+                    Toggle Theme
+                </button>
+            </div>
+            
+            <div class="card bg-base-200 shadow-xl p-6">
+                <h3 class="text-xl font-semibold mb-4">Sample UI Elements</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button class="btn btn-secondary">Secondary Button</button>
+                    <button class="btn btn-accent">Accent Button</button>
+                    <button class="btn btn-success">Success Button</button>
+                    <button class="btn btn-error">Error Button</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isDark = true;
+        
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentThemeSpan = document.getElementById('current-theme');
+            
+            if (isDark) {
+                html.setAttribute('data-theme', 'graphivault-light');
+                currentThemeSpan.textContent = 'graphivault-light';
+                isDark = false;
+            } else {
+                html.setAttribute('data-theme', 'graphivault');
+                currentThemeSpan.textContent = 'graphivault';
+                isDark = true;
+            }
+        }
+        
+        // Set initial theme
+        document.documentElement.setAttribute('data-theme', 'graphivault');
+    </script>
+</body>
+</html>

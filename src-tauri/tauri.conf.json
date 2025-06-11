@@ -39,13 +39,11 @@
       "os": {
         "all": true
       }
-    },
-    "bundle": {
-      "active": true,
+    },    "bundle": {
+      "active": false,
       "targets": "all",
-      "identifier": "com.ziyanalisaiyed.graphivault",      "icon": [
-        "icons/icon.png"
-      ],
+      "identifier": "com.ziyanalisaiyed.graphivault",
+      "icon": [],
       "resources": [],
       "externalBin": [],
       "copyright": "Copyright © 2025 Ziyanali Saiyed",

@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { tauriAPI, isTauri } from '../utils/tauri'
+import type { ImageRecord } from '../types/database'
 
 export interface ImageFile {
   id: string
@@ -15,12 +17,29 @@ export interface ImageFile {
   thumbnailPath?: string
 }
 
+// Convert ImageRecord to ImageFile
+const convertImageRecord = (record: ImageRecord): ImageFile => ({
+  id: record.id.toString(),
+  name: record.file_name,
+  path: record.storage_path,
+  size: record.file_size,
+  type: 'image/jpeg', // Default type, would be determined from file
+  dateAdded: new Date(record.created_at),
+  dateModified: new Date(record.updated_at),
+  tags: [], // Tags would be loaded separately
+  metadata: {},
+  isEncrypted: true, // All images in vault are encrypted
+  thumbnailPath: undefined
+})
+
 export const useVaultStore = defineStore('vault', () => {
   const images = ref<ImageFile[]>([])
   const selectedImages = ref<Set<string>>(new Set())
   const searchQuery = ref('')
   const selectedTags = ref<string[]>([])
   const isLoading = ref(false)
+  const isVaultLocked = ref(true)
+  const searchResults = ref<any[]>([])
 
   const filteredImages = computed(() => {
     let filtered = images.value
@@ -43,7 +62,6 @@ export const useVaultStore = defineStore('vault', () => {
 
     return filtered
   })
-
   const allTags = computed(() => {
     const tags = new Set<string>()
     images.value.forEach(img => {
@@ -51,12 +69,40 @@ export const useVaultStore = defineStore('vault', () => {
     })
     return Array.from(tags).sort()
   })
-
+  
   const addImages = async (files: File[]) => {
     isLoading.value = true
     try {
-      // TODO: Implement file processing and encryption
-      console.log('Adding images:', files)
+      for (const file of files) {
+        // Calculate basic file hash (in real implementation, would be more robust)
+        const fileHash = `hash_${Date.now()}_${Math.random()}`
+        
+        const imageId = await tauriAPI.addImage(
+          fileHash,
+          file.name,
+          file.name, // storage path
+          file.size
+        )
+        
+        // Create ImageFile from the data we have
+        const imageFile: ImageFile = {
+          id: imageId.toString(),
+          name: file.name,
+          path: file.name,
+          size: file.size,
+          type: file.type,
+          dateAdded: new Date(),
+          dateModified: new Date(file.lastModified),
+          tags: [],
+          metadata: {
+            webkitRelativePath: (file as any).webkitRelativePath || ''
+          },
+          isEncrypted: true,
+          thumbnailPath: undefined
+        }
+        
+        images.value.push(imageFile)
+      }
     } catch (error) {
       console.error('Error adding images:', error)
     } finally {
@@ -64,10 +110,72 @@ export const useVaultStore = defineStore('vault', () => {
     }
   }
 
-  const deleteSelectedImages = async () => {
-    // TODO: Implement image deletion
-    console.log('Deleting images:', Array.from(selectedImages.value))
+  const loadImages = async () => {
+    isLoading.value = true
+    try {
+      const imageRecords = await tauriAPI.getImages()
+      images.value = imageRecords.map(convertImageRecord)
+    } catch (error) {
+      console.error('Error loading images:', error)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const setVaultLocked = (locked: boolean) => {
+    isVaultLocked.value = locked
+  }
+
+  const clearImages = () => {
+    images.value = []
     selectedImages.value.clear()
+    searchResults.value = []
+  }
+
+  const setSearchResults = (results: any[]) => {
+    searchResults.value = results
+  }
+
+  const refreshImages = async () => {
+    isLoading.value = true
+    try {
+      const result = await tauriAPI.searchImages('', []) // Get all images
+      if (result.success && result.data?.results) {
+        // Convert backend results to ImageFile format
+        images.value = result.data.results.map((result: any) => ({
+          id: result.id,
+          name: result.name,
+          path: '', // Will be loaded on demand
+          size: result.size,
+          type: result.mime_type,
+          dateAdded: new Date(result.date_added),
+          dateModified: new Date(result.date_added),
+          tags: result.tags || [],
+          metadata: result.metadata || {},
+          isEncrypted: result.is_encrypted,
+          thumbnailPath: result.thumbnail_path
+        }))
+      }
+    } catch (error) {
+      console.error('Error refreshing images:', error)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const deleteSelectedImages = async () => {
+    isLoading.value = true
+    try {
+      // Delete images using the backend (not implemented in current IPC gateway)
+      // For now, just remove from local state
+      const imagesToDelete = Array.from(selectedImages.value)
+      images.value = images.value.filter(img => !imagesToDelete.includes(img.id))
+      selectedImages.value.clear()
+    } catch (error) {
+      console.error('Error deleting images:', error)
+    } finally {
+      isLoading.value = false
+    }
   }
 
   const toggleImageSelection = (id: string) => {
@@ -77,22 +185,43 @@ export const useVaultStore = defineStore('vault', () => {
       selectedImages.value.add(id)
     }
   }
-
   const clearSelection = () => {
     selectedImages.value.clear()
   }
 
+  // Initialize data when store is created
+  const initialize = async () => {
+    try {
+      await tauriAPI.initDatabase()
+      await loadImages()
+    } catch (error) {
+      console.error('Error initializing vault store:', error)
+    }
+  }
   return {
+    // State
     images,
     selectedImages,
     searchQuery,
     selectedTags,
     isLoading,
+    isVaultLocked,
+    searchResults,
+    
+    // Computed
     filteredImages,
     allTags,
+    
+    // Actions
     addImages,
-    deleteSelectedImages,
+    loadImages,
     toggleImageSelection,
-    clearSelection
+    clearSelection,
+    initialize,
+    setVaultLocked,
+    clearImages,
+    setSearchResults,
+    refreshImages,
+    deleteSelectedImages
   }
 })

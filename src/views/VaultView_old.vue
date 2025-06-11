@@ -131,6 +131,13 @@
     </div>
   </div>
 </template>
+      <div v-if="vaultStore.isLoading" class="text-center py-12">
+        <div class="loading loading-spinner loading-lg"></div>
+        <p class="mt-4">Processing images...</p>
+      </div>
+    </div>
+  </div>
+</template>
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'

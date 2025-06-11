@@ -25,25 +25,34 @@ export const useThemeStore = defineStore('theme', () => {
     localStorage.setItem('graphivault-theme', theme.value)
     applyTheme()
   }
-
   const applyTheme = () => {
+    // Apply the theme to the document
     document.documentElement.setAttribute('data-theme', theme.value)
     document.documentElement.classList.toggle('dark', isDark.value)
+    
+    // Force immediate visual update
+    const root = document.documentElement
+    root.style.setProperty('--tw-bg-opacity', '1')
     
     // Apply GraphiVault-specific body styles
     if (isDark.value) {
       document.body.style.backgroundColor = '#0D1117'
       document.body.style.color = '#E5E7EB'
+      root.style.colorScheme = 'dark'
     } else {
       document.body.style.backgroundColor = '#ffffff'
       document.body.style.color = '#1e293b'
+      root.style.colorScheme = 'light'
     }
+    
+    // Trigger a reflow to ensure changes are applied
+    document.body.offsetHeight
   }
-
   return {
     isDark,
     theme,
     initializeTheme,
-    toggleTheme
+    toggleTheme,
+    applyTheme
   }
 })

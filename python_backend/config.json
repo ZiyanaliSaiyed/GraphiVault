@@ -1,0 +1,45 @@
+{
+  "vault": {
+    "default_path": "./vault",
+    "data_dir": "data",
+    "thumbnails_dir": "thumbnails",
+    "temp_dir": "temp",
+    "metadata_dir": "metadata",
+    "backups_dir": "backups",
+    "database_dir": "database"
+  },
+  "crypto": {
+    "algorithm": "AES-256-GCM",
+    "key_derivation": "PBKDF2-HMAC-SHA512",
+    "iterations": 200000,
+    "salt_size": 32,
+    "nonce_size": 12,
+    "tag_size": 16
+  },
+  "image": {
+    "max_file_size": 104857600,
+    "supported_formats": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp"],
+    "thumbnail_size": [256, 256],
+    "thumbnail_quality": 85,
+    "extract_metadata": true,
+    "sanitize_metadata": true
+  },
+  "session": {
+    "timeout_minutes": 30,
+    "auto_lock": true,
+    "max_failed_attempts": 3,
+    "lockout_duration_minutes": 15,
+    "session_renewal_threshold_minutes": 5
+  },
+  "security": {
+    "privacy_first": true,
+    "offline_only": true,
+    "audit_logging": true,
+    "secure_delete": true
+  },
+  "performance": {
+    "database_cache_size": 67108864,
+    "connection_timeout": 30,
+    "max_concurrent_operations": 4
+  }
+}

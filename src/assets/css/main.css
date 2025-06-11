@@ -24,6 +24,10 @@ body {
   color: #E5E7EB;
   font-family: 'Inter', system-ui, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* Modern CSS for cross-browser text scaling */
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
 }
 
 /* Selection Styles */

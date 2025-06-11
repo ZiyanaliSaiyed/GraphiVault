@@ -1,0 +1,115 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients for depth and modern look -->
+    <linearGradient id="vaultGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3A5FCD;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2A4AB8;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3DE1B3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2BC19A;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="shadowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7F8FA6;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#7F8FA6;stop-opacity:0.1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background squircle with subtle shadow -->
+  <rect x="32" y="32" width="448" height="448" rx="90" ry="90" fill="#1C1C1E"/>
+  
+  <!-- Main vault body -->
+  <circle cx="256" cy="256" r="160" fill="url(#vaultGradient)" stroke="#2A4AB8" stroke-width="4"/>
+  
+  <!-- Vault door rim -->
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#7F8FA6" stroke-width="2" opacity="0.6"/>
+  
+  <!-- Central lock mechanism -->
+  <circle cx="256" cy="256" r="80" fill="#1C1C1E" stroke="url(#accentGradient)" stroke-width="6"/>
+  
+  <!-- Lock dial markings -->
+  <g stroke="url(#accentGradient)" stroke-width="3" fill="none">
+    <!-- Main dial divisions -->
+    <line x1="256" y1="176" x2="256" y2="186" />
+    <line x1="336" y1="256" x2="326" y2="256" />
+    <line x1="256" y1="336" x2="256" y2="326" />
+    <line x1="176" y1="256" x2="186" y2="256" />
+    
+    <!-- Secondary markings -->
+    <line x1="308.28" y1="203.72" x2="304.24" y2="207.76" transform="rotate(45 256 256)" />
+    <line x1="308.28" y1="308.28" x2="304.24" y2="304.24" transform="rotate(135 256 256)" />
+    <line x1="203.72" y1="308.28" x2="207.76" y2="304.24" transform="rotate(225 256 256)" />
+    <line x1="203.72" y1="203.72" x2="207.76" y2="207.76" transform="rotate(315 256 256)" />
+  </g>
+  
+  <!-- Central handle/indicator -->
+  <circle cx="256" cy="256" r="20" fill="url(#accentGradient)"/>
+  <circle cx="256" cy="256" r="12" fill="#1C1C1E"/>
+  
+  <!-- Digital/pixel grid overlay (representing encrypted images) -->
+  <g opacity="0.4" fill="url(#accentGradient)">
+    <!-- 3x3 pixel grid inside vault -->
+    <rect x="220" y="220" width="8" height="8" rx="1"/>
+    <rect x="234" y="220" width="8" height="8" rx="1"/>
+    <rect x="248" y="220" width="8" height="8" rx="1"/>
+    
+    <rect x="220" y="234" width="8" height="8" rx="1"/>
+    <rect x="234" y="234" width="8" height="8" rx="1"/>
+    <rect x="248" y="234" width="8" height="8" rx="1"/>
+    
+    <rect x="220" y="248" width="8" height="8" rx="1"/>
+    <rect x="234" y="248" width="8" height="8" rx="1"/>
+    <rect x="248" y="248" width="8" height="8" rx="1"/>
+    
+    <!-- Mirror on the right side -->
+    <rect x="264" y="220" width="8" height="8" rx="1"/>
+    <rect x="278" y="220" width="8" height="8" rx="1"/>
+    <rect x="292" y="220" width="8" height="8" rx="1"/>
+    
+    <rect x="264" y="234" width="8" height="8" rx="1"/>
+    <rect x="278" y="234" width="8" height="8" rx="1"/>
+    <rect x="292" y="234" width="8" height="8" rx="1"/>
+    
+    <rect x="264" y="248" width="8" height="8" rx="1"/>
+    <rect x="278" y="248" width="8" height="8" rx="1"/>
+    <rect x="292" y="248" width="8" height="8" rx="1"/>
+    
+    <!-- Bottom rows -->
+    <rect x="220" y="264" width="8" height="8" rx="1"/>
+    <rect x="234" y="264" width="8" height="8" rx="1"/>
+    <rect x="248" y="264" width="8" height="8" rx="1"/>
+    <rect x="264" y="264" width="8" height="8" rx="1"/>
+    <rect x="278" y="264" width="8" height="8" rx="1"/>
+    <rect x="292" y="264" width="8" height="8" rx="1"/>
+    
+    <rect x="220" y="278" width="8" height="8" rx="1"/>
+    <rect x="234" y="278" width="8" height="8" rx="1"/>
+    <rect x="248" y="278" width="8" height="8" rx="1"/>
+    <rect x="264" y="278" width="8" height="8" rx="1"/>
+    <rect x="278" y="278" width="8" height="8" rx="1"/>
+    <rect x="292" y="278" width="8" height="8" rx="1"/>
+    
+    <rect x="220" y="292" width="8" height="8" rx="1"/>
+    <rect x="234" y="292" width="8" height="8" rx="1"/>
+    <rect x="248" y="292" width="8" height="8" rx="1"/>
+    <rect x="264" y="292" width="8" height="8" rx="1"/>
+    <rect x="278" y="292" width="8" height="8" rx="1"/>
+    <rect x="292" y="292" width="8" height="8" rx="1"/>
+  </g>
+  
+  <!-- Subtle shield overlay for security indication -->
+  <path d="M256 180 L280 195 L280 220 Q280 235 256 245 Q232 235 232 220 L232 195 Z" 
+        fill="none" stroke="url(#accentGradient)" stroke-width="2" opacity="0.6"/>
+  
+  <!-- Privacy indicator (diagonal slash over "eye" - very subtle) -->
+  <g opacity="0.3" stroke="#7F8FA6" stroke-width="2" fill="none">
+    <ellipse cx="380" cy="132" rx="16" ry="10"/>
+    <circle cx="380" cy="132" r="4" fill="#7F8FA6"/>
+    <line x1="368" y1="120" x2="392" y2="144"/>
+  </g>
+  
+  <!-- Subtle glow effect -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#shadowGradient)" stroke-width="8" opacity="0.2"/>
+</svg>
