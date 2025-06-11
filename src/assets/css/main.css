@@ -1,71 +1,213 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* Custom scrollbar */
+/* GraphiVault Design System Base */
+:root {
+  --gv-primary-bg: #0D1117;
+  --gv-elevated-surface: #161B22;
+  --gv-primary-accent: #3B82F6;
+  --gv-success-accent: #10B981;
+  --gv-warning-accent: #F59E0B;
+  --gv-error-accent: #EF4444;
+  --gv-hover-overlay: rgba(255, 255, 255, 0.04);
+  --gv-text-base: #E5E7EB;
+  --gv-text-muted: #9CA3AF;
+  --gv-border-subtle: rgba(255, 255, 255, 0.1);
+}
+
+/* Global Body Styles for GraphiVault */
+body {
+  background-color: #0D1117;
+  color: #E5E7EB;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Selection Styles */
+::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: #E5E7EB;
+}
+
+::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: #E5E7EB;
+}
+
+/* Focus States */
+*:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar - Dark themed */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-base-200;
+  background: var(--gv-primary-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-base-300 rounded-full;
+  background: var(--gv-text-muted);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-base-content/20;
+  background: var(--gv-primary-accent);
 }
 
-/* Custom utility classes */
+/* GraphiVault Custom Components */
+@layer components {
+  .gv-button-primary {
+    @apply bg-blue-500 hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-lg 
+           transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105
+           border border-blue-400/30 hover:border-blue-300/50;
+  }
+  
+  .gv-button-outline {
+    @apply bg-transparent border-2 border-gray-600 hover:border-blue-500 
+           text-gray-200 hover:text-blue-400 font-medium px-6 py-3 rounded-lg
+           transition-all duration-200 hover:bg-blue-500/10;
+  }
+  
+  .gv-card {
+    @apply bg-gray-900/90 backdrop-blur-md border border-gray-700/50 rounded-xl
+           shadow-2xl hover:shadow-blue-500/10 transition-all duration-300
+           hover:border-gray-600/70;
+  }
+  
+  .gv-card-hover {
+    @apply hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/20;
+  }
+  
+  .gv-input {
+    @apply bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3
+           text-gray-200 placeholder-gray-500 focus:border-blue-500 
+           focus:ring-2 focus:ring-blue-500/20 transition-all duration-200;
+  }
+  
+  .gv-navbar {
+    @apply bg-gray-950/95 backdrop-blur-md border-b border-gray-800/80 shadow-lg;
+  }
+  
+  .gv-text-gradient {
+    @apply bg-gradient-to-r from-blue-400 via-blue-500 to-emerald-400 bg-clip-text text-transparent;
+  }
+  
+  .gv-glass {
+    @apply backdrop-blur-md bg-black/20 border border-white/10;
+  }
+  
+  .gv-vault-bg {
+    background: linear-gradient(135deg, #0D1117 0%, #161B22 50%, #0D1117 100%);
+  }
+}
+
+/* Additional Utility Classes */
 @layer utilities {
-  .glass {
-    @apply backdrop-blur-md bg-white/10 border border-white/20;
+  .gv-border-gradient {
+    border: 1px solid transparent;
+    background: linear-gradient(#0D1117, #0D1117) padding-box,
+                linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2)) border-box;
   }
   
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  .gv-shadow-vault {
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.3),
+      0 2px 4px -1px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
   }
   
-  .gradient-primary {
-    background: linear-gradient(135deg, theme('colors.primary.500'), theme('colors.secondary.500'));
+  .gv-backdrop-dark {
+    backdrop-filter: blur(12px) saturate(180%);
+    background-color: rgba(13, 17, 23, 0.8);
   }
   
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  .gv-animate-vault-lock {
+    animation: vaultLock 0.4s ease-out;
+  }
+  
+  .gv-animate-pulse-success {
+    animation: pulseSuccess 0.6s ease-in-out;
+  }
+  
+  .gv-animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+  
+  .gv-animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  .gv-transition-smooth {
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  .gv-transition-slow {
+    @apply transition-all duration-500 ease-out;
   }
 }
 
-/* Dark mode improvements */
-[data-theme="dark"] {
-  color-scheme: dark;
+@keyframes vaultLock {
+  0% { 
+    transform: scale(0.8) rotate(-5deg); 
+    opacity: 0; 
+  }
+  50% { 
+    transform: scale(1.05) rotate(2deg); 
+  }
+  100% { 
+    transform: scale(1) rotate(0deg); 
+    opacity: 1; 
+  }
 }
 
-/* Animation improvements */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+@keyframes pulseSuccess {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); 
+  }
+  50% { 
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); 
+  }
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
+@keyframes glow {
+  from { 
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); 
+  }
+  to { 
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); 
+  }
 }
 
-.slide-enter-from {
-  transform: translateX(-100%);
+/* Typography Classes */
+.gv-heading-xl {
+  @apply text-4xl sm:text-5xl font-bold tracking-tight text-gray-100;
 }
 
-.slide-leave-to {
-  transform: translateX(100%);
+.gv-heading-lg {
+  @apply text-2xl sm:text-3xl font-semibold tracking-wide text-gray-200;
+}
+
+.gv-heading-md {
+  @apply text-xl font-semibold tracking-wide text-gray-200;
+}
+
+.gv-text-body {
+  @apply text-base text-gray-300 leading-relaxed;
+}
+
+.gv-text-meta {
+  @apply text-sm text-gray-400 uppercase tracking-wider font-mono;
 }

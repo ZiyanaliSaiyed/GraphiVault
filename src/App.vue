@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen bg-base-100">
+  <div id="app" class="min-h-screen bg-gv-primary text-gv-text">
     <RouterView />
   </div>
 </template>
@@ -13,13 +13,16 @@ const themeStore = useThemeStore()
 
 onMounted(() => {
   themeStore.initializeTheme()
+  // Set GraphiVault as default theme
+  document.documentElement.setAttribute('data-theme', 'graphivault')
 })
 </script>
 
 <style scoped>
 #app {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
 }
 </style>

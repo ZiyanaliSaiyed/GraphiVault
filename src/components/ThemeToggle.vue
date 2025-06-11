@@ -1,12 +1,13 @@
 <template>
   <button
     @click="themeStore.toggleTheme"
-    class="btn btn-ghost btn-circle"
+    class="p-2 rounded-lg hover:bg-gray-800/50 gv-transition-smooth group"
     :title="`Switch to ${themeStore.isDark ? 'light' : 'dark'} theme`"
   >
+    <!-- Sun Icon (Light Mode) -->
     <svg
       v-if="themeStore.isDark"
-      class="w-5 h-5"
+      class="w-5 h-5 text-gray-400 group-hover:text-yellow-400 gv-transition-smooth group-hover:rotate-12"
       fill="currentColor"
       viewBox="0 0 20 20"
     >
@@ -16,9 +17,10 @@
         clip-rule="evenodd"
       />
     </svg>
+    <!-- Moon Icon (Dark Mode) -->
     <svg
       v-else
-      class="w-5 h-5"
+      class="w-5 h-5 text-gray-400 group-hover:text-blue-400 gv-transition-smooth group-hover:-rotate-12"
       fill="currentColor"
       viewBox="0 0 20 20"
     >

@@ -2,33 +2,42 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useThemeStore = defineStore('theme', () => {
-  const isDark = ref(false)
-  const theme = ref<'light' | 'dark'>('light')
+  const isDark = ref(true) // Default to dark for GraphiVault
+  const theme = ref<'graphivault' | 'graphivault-light'>('graphivault')
 
   const initializeTheme = () => {
-    const savedTheme = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const savedTheme = localStorage.getItem('graphivault-theme')
     
-    if (savedTheme) {
-      theme.value = savedTheme as 'light' | 'dark'
+    if (savedTheme && (savedTheme === 'graphivault' || savedTheme === 'graphivault-light')) {
+      theme.value = savedTheme as 'graphivault' | 'graphivault-light'
     } else {
-      theme.value = prefersDark ? 'dark' : 'light'
+      // GraphiVault defaults to dark theme (privacy-first mindset)
+      theme.value = 'graphivault'
     }
     
-    isDark.value = theme.value === 'dark'
+    isDark.value = theme.value === 'graphivault'
     applyTheme()
   }
 
   const toggleTheme = () => {
-    theme.value = theme.value === 'light' ? 'dark' : 'light'
-    isDark.value = theme.value === 'dark'
-    localStorage.setItem('theme', theme.value)
+    theme.value = theme.value === 'graphivault' ? 'graphivault-light' : 'graphivault'
+    isDark.value = theme.value === 'graphivault'
+    localStorage.setItem('graphivault-theme', theme.value)
     applyTheme()
   }
 
   const applyTheme = () => {
     document.documentElement.setAttribute('data-theme', theme.value)
     document.documentElement.classList.toggle('dark', isDark.value)
+    
+    // Apply GraphiVault-specific body styles
+    if (isDark.value) {
+      document.body.style.backgroundColor = '#0D1117'
+      document.body.style.color = '#E5E7EB'
+    } else {
+      document.body.style.backgroundColor = '#ffffff'
+      document.body.style.color = '#1e293b'
+    }
   }
 
   return {
