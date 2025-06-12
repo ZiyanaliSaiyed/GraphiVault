@@ -10,9 +10,9 @@ from typing import List, Dict, Set, Any, Optional
 from datetime import datetime, timezone
 
 try:
-    from .crypto_controller import CryptoController
+    from ..crypto.crypto_controller import CryptoController
 except ImportError:
-    from crypto_controller import CryptoController
+    from crypto.crypto_controller import CryptoController
 
 
 class TagManager:

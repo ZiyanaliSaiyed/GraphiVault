@@ -13,9 +13,9 @@ from typing import Dict, Optional, Any
 from datetime import datetime, timezone
 
 try:
-    from .crypto_controller import CryptoController
+    from ..crypto.crypto_controller import CryptoController
 except ImportError:
-    from crypto_controller import CryptoController
+    from crypto.crypto_controller import CryptoController
 
 
 class VaultManager:

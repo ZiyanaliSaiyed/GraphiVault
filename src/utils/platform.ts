@@ -302,34 +302,31 @@ const tauriAPI: GraphiVaultAPI = {
   async decryptFile(encrypted_file_path: string, password: string): Promise<string> {
     return await invoke('decrypt_file', { encryptedFilePath: encrypted_file_path, password })
   },
-
   // Python Backend Integration
   async initializeVault(master_password: string): Promise<PythonBackendResponse> {
-    return await invoke('initialize_vault', { master_password })
+    return await invoke('initialize_vault', { masterPassword: master_password })
   },
 
   async unlockVault(master_password: string): Promise<PythonBackendResponse> {
-    return await invoke('unlock_vault', { master_password })
+    return await invoke('unlock_vault', { masterPassword: master_password })
   },
 
   async lockVault(): Promise<PythonBackendResponse> {
     return await invoke('lock_vault')
   },
-
   async processImageFile(file_path: string, tags: string[]): Promise<PythonBackendResponse> {
-    return await invoke('process_image_file', { file_path, tags })
+    return await invoke('process_image_file', { filePath: file_path, tags })
   },
 
   async searchImages(query: string, tags: string[]): Promise<PythonBackendResponse> {
     return await invoke('search_images', { query, tags })
   },
-
   async getDecryptedImage(image_id: number): Promise<PythonBackendResponse> {
-    return await invoke('get_decrypted_image', { image_id })
+    return await invoke('get_decrypted_image', { imageId: image_id })
   },
 
   async getImageThumbnail(image_id: number): Promise<PythonBackendResponse> {
-    return await invoke('get_image_thumbnail', { image_id })
+    return await invoke('get_image_thumbnail', { imageId: image_id })
   }
 }
 

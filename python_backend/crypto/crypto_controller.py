@@ -51,7 +51,60 @@ class CryptoController:
         self._tag_keychain = None
         self._key_derivation_salt = None
         
-    def initialize_master_key(self, master_password: str) -> bool:
+    def save_crypto_params(self, vault_path: Path) -> bool:
+        """Save cryptographic parameters to vault key file"""
+        try:
+            key_file = vault_path / 'vault.key'
+            
+            crypto_params = {
+                'algorithm': self.config['algorithm'],
+                'key_derivation': self.config['key_derivation'],
+                'iterations': self.config['iterations'],
+                'salt_size': self.config['salt_size'],
+                'nonce_size': self.config['nonce_size'],
+                'tag_size': self.config['tag_size'],
+                'salt': base64.b64encode(self._key_derivation_salt).decode('utf-8') if self._key_derivation_salt else None
+            }
+            
+            with open(key_file, 'w') as f:
+                json.dump(crypto_params, f, indent=2)
+            
+            return True
+            
+        except Exception:
+            return False
+    
+    def load_crypto_params(self, vault_path: Path) -> bool:
+        """Load cryptographic parameters from vault key file"""
+        try:
+            key_file = vault_path / 'vault.key'
+            
+            if not key_file.exists():
+                return False
+            
+            with open(key_file, 'r') as f:
+                crypto_params = json.load(f)
+            
+            # Update config with loaded parameters
+            self.config.update({
+                'algorithm': crypto_params.get('algorithm', self.config['algorithm']),
+                'key_derivation': crypto_params.get('key_derivation', self.config['key_derivation']),
+                'iterations': crypto_params.get('iterations', self.config['iterations']),
+                'salt_size': crypto_params.get('salt_size', self.config['salt_size']),
+                'nonce_size': crypto_params.get('nonce_size', self.config['nonce_size']),
+                'tag_size': crypto_params.get('tag_size', self.config['tag_size'])
+            })
+            
+            # Load salt
+            if crypto_params.get('salt'):
+                self._key_derivation_salt = base64.b64decode(crypto_params['salt'])
+            
+            return True
+            
+        except Exception:
+            return False
+
+    def initialize_master_key(self, master_password: str, vault_path: Path = None) -> bool:
         """
         Initialize master key from password using PBKDF2-HMAC-SHA512
         """
@@ -75,6 +128,10 @@ class CryptoController:
             
             # Generate tag keychain (separate encryption domain)
             self._tag_keychain = secrets.token_bytes(32)
+            
+            # Save cryptographic parameters to vault
+            if vault_path:
+                self.save_crypto_params(vault_path)
             
             return True
             

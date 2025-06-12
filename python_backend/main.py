@@ -14,7 +14,7 @@ backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
 
 # Import the IPC Gateway
-from ipc_gateway import main as ipc_main
+from ipc.ipc_gateway import main as ipc_main
 
 if __name__ == '__main__':
     # Set up environment

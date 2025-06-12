@@ -13,11 +13,15 @@ from typing import Dict, Any, Optional, List
 import traceback
 
 try:
-    from .core_engine import GraphiVaultCore
-    from .storage_interface import StorageInterface
+    from ..core.core_engine import GraphiVaultCore
+    from ..storage.storage_interface import StorageInterface
 except ImportError:
-    from core_engine import GraphiVaultCore
-    from storage_interface import StorageInterface
+    # Fallback for direct execution
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from core.core_engine import GraphiVaultCore
+    from storage.storage_interface import StorageInterface
 
 
 class IPCGateway:

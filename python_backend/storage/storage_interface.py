@@ -45,10 +45,11 @@ class AnnotationRecord:
     note: str  # Encrypted content
     created_at: Optional[datetime] = None
 
+# Import crypto controller
 try:
-    from .crypto_controller import CryptoController
+    from ..crypto.crypto_controller import CryptoController
 except ImportError:
-    from crypto_controller import CryptoController
+    from crypto.crypto_controller import CryptoController
 
 
 class StorageInterface:

@@ -26,11 +26,38 @@ async fn call_python_backend(
         .ok_or("Failed to get app data directory")?;
 
     let vault_path = app_data_dir.join("vault");
-    let python_backend_path = app_handle
-        .path_resolver()
-        .resource_dir()
-        .unwrap_or_else(|| std::env::current_dir().unwrap())
-        .join("python_backend");
+
+    // In development, look for python_backend in the project root
+    // In production, look for it in the resource directory
+    let python_backend_path = if cfg!(debug_assertions) {
+        // Development mode - find project root by looking for package.json
+        let mut current_dir = std::env::current_dir().unwrap();
+
+        // Look for project root (contains package.json and python_backend)
+        loop {
+            let package_json = current_dir.join("package.json");
+            let python_backend = current_dir.join("python_backend");
+
+            if package_json.exists() && python_backend.exists() {
+                break current_dir.join("python_backend");
+            }
+
+            match current_dir.parent() {
+                Some(parent) => current_dir = parent.to_path_buf(),
+                None => {
+                    // Fallback to absolute path if we can't find project root
+                    break std::path::PathBuf::from("D:\\GraphiVault\\python_backend");
+                }
+            }
+        }
+    } else {
+        // Production mode - look in resource directory
+        app_handle
+            .path_resolver()
+            .resource_dir()
+            .unwrap_or_else(|| std::env::current_dir().unwrap())
+            .join("python_backend")
+    };
 
     // Prepare arguments
     let mut cmd_args = vec![
@@ -49,19 +76,41 @@ async fn call_python_backend(
         cmd_args.push(value.to_string().trim_matches('"').to_string());
     }
 
+    // Debug logging for path resolution
+    println!("🐍 Python backend path: {:?}", python_backend_path);
+    println!("🐍 Main.py path: {:?}", python_backend_path.join("main.py"));
+    println!("🐍 Command args: {:?}", cmd_args);
+
     let output = std::process::Command::new("python")
         .args(&cmd_args)
         .output()
         .map_err(|e| format!("Failed to execute Python backend: {}", e))?;
 
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Enhanced debug logging
+    println!("🐍 Python exit code: {:?}", output.status.code());
+    println!("🐍 Python stdout: {}", stdout);
+    println!("🐍 Python stderr: {}", stderr);
+
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(format!("Python backend error: {}", stderr));
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    serde_json::from_str(&stdout)
-        .map_err(|e| format!("Failed to parse Python backend response: {}", e))
+    if stdout.trim().is_empty() {
+        return Err(format!(
+            "Python backend returned empty response. stderr: {}",
+            stderr
+        ));
+    }
+
+    serde_json::from_str(&stdout).map_err(|e| {
+        format!(
+            "Failed to parse Python backend response: {}. Raw output: {}",
+            e, stdout
+        )
+    })
 }
 
 #[tauri::command]

@@ -16,24 +16,24 @@ from datetime import datetime, timezone
 import json
 
 try:
-    from .crypto_controller import CryptoController
+    from ..crypto.crypto_controller import CryptoController
     from .vault_manager import VaultManager
-    from .image_processor import ImageProcessor
-    from .tag_manager import TagManager
-    from .search_engine import SearchEngine
-    from .audit_logger import AuditLogger
+    from ..ui.image_processor import ImageProcessor
+    from ..utils.tag_manager import TagManager
+    from ..database.search_engine import SearchEngine
+    from ..utils.audit_logger import AuditLogger
     from .session_manager import SessionManager
-    from .storage_interface import StorageInterface, ImageRecord
+    from ..storage.storage_interface import StorageInterface, ImageRecord
 except ImportError:
     # Fallback for direct execution
-    from crypto_controller import CryptoController
-    from vault_manager import VaultManager
-    from image_processor import ImageProcessor
-    from tag_manager import TagManager
-    from search_engine import SearchEngine
-    from audit_logger import AuditLogger
-    from session_manager import SessionManager
-    from storage_interface import StorageInterface, ImageRecord
+    from crypto.crypto_controller import CryptoController
+    from core.vault_manager import VaultManager
+    from ui.image_processor import ImageProcessor
+    from utils.tag_manager import TagManager
+    from database.search_engine import SearchEngine
+    from utils.audit_logger import AuditLogger
+    from core.session_manager import SessionManager
+    from storage.storage_interface import StorageInterface, ImageRecord
 
 
 # Remove the duplicate ImageRecord definition since it's now imported
@@ -119,9 +119,8 @@ class GraphiVaultCore:
             # Create vault structure
             if not self.vault_manager.create_vault():
                 return False
-            
-            # Initialize crypto with master password
-            if not self.crypto.initialize_master_key(master_password):
+              # Initialize crypto with master password
+            if not self.crypto.initialize_master_key(master_password, self.vault_path):
                 return False
               # Create session
             session_key = self.session_manager.create_session(master_password)
@@ -154,37 +153,59 @@ class GraphiVaultCore:
         Returns True if successful, False otherwise
         """
         try:
+            print("🔐 [CORE] Starting vault unlock process...")
             self.audit_logger.log_event('vault_unlock_attempt', {
                 'timestamp': datetime.now(timezone.utc).isoformat()
             })
             
             # Verify vault exists
             if not self.vault_manager.vault_exists():
+                print("🔐 [CORE] ERROR: Vault does not exist")
                 return False
+            print("🔐 [CORE] Vault structure verified")
+            
+            # Load crypto parameters from storage before verification
+            print("🔐 [CORE] Loading crypto parameters...")
+            if not self.crypto.load_crypto_params(self.vault_path):
+                print("🔐 [CORE] ERROR: Failed to load crypto parameters")
+                return False
+            print("🔐 [CORE] Crypto parameters loaded successfully")
             
             # Verify master password
+            print("🔐 [CORE] Verifying master password...")
             if not self.crypto.verify_master_key(master_password):
+                print("🔐 [CORE] ERROR: Master password verification failed")
                 self.session_manager.record_failed_attempt()
                 return False
-              # Create session
+            print("🔐 [CORE] Master password verified successfully")              # Create session
+            print("🔐 [CORE] Creating session...")
             session_key = self.session_manager.create_session(master_password)
             if not session_key:
+                print("🔐 [CORE] ERROR: Failed to create session")
                 return False
+            print("🔐 [CORE] Session created successfully")
             
             # Initialize storage interface
+            print("🔐 [CORE] Initializing storage interface...")
             db_path = self.vault_path / 'database' / 'vault.db'
             self.storage = StorageInterface(str(db_path), self.crypto)
+            print("🔐 [CORE] Storage interface initialized")
             
             self._is_initialized = True
             self._master_key_hash = hashlib.sha512(master_password.encode()).hexdigest()
             
+            print("🔐 [CORE] Vault unlocked successfully! ✅")
             self.audit_logger.log_event('vault_unlock_success', {
                 'timestamp': datetime.now(timezone.utc).isoformat()
             })
             
-            return True
-            
+            return True            
         except Exception as e:
+            print(f"🔐 [CORE] ERROR: Exception during vault unlock: {str(e)}")
+            print(f"🔐 [CORE] Exception type: {type(e).__name__}")
+            import traceback
+            print(f"🔐 [CORE] Traceback: {traceback.format_exc()}")
+            
             self.audit_logger.log_event('vault_unlock_error', {
                 'timestamp': datetime.now(timezone.utc).isoformat(),
                 'error': str(e)
