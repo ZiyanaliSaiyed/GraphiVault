@@ -121,6 +121,18 @@ npm run tauri build
 # The binary will be available in src-tauri/target/release/
 ```
 
+## 🚀 Running as a Native Desktop App
+
+To run GraphiVault as a native desktop application (not in the browser), always use:
+
+```
+npm run tauri dev
+```
+
+This will launch the full Tauri-powered native window. Do **not** use `npm run dev` for production-like testing, as that only runs the frontend in your browser.
+
+If you see errors like `OUT_DIR env var is not set`, make sure you are running the app with the Tauri CLI as above.
+
 ## 📱 Platform Support
 
 | Platform | Status | Binary Size | Performance |

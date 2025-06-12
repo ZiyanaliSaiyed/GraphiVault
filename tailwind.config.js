@@ -131,16 +131,16 @@ export default {
           warning: '#f59e0b',
           error: '#ef4444',
         },
-        // Light theme (minimal, for accessibility)
+        // Light theme (improved for accessibility)
         "graphivault-light": {
-          primary: '#3b82f6',
-          secondary: '#10b981',
+          primary: '#2563eb', // deeper blue for better contrast
+          secondary: '#059669', // deeper green
           accent: '#8b5cf6',
-          neutral: '#1f2937',
+          neutral: '#f3f4f6', // lighter neutral
           'base-100': '#ffffff',
           'base-200': '#f8fafc',
           'base-300': '#e2e8f0',
-          'base-content': '#1e293b',
+          'base-content': '#1e293b', // much darker text for readability
           info: '#0ea5e9',
           success: '#10b981',
           warning: '#f59e0b',

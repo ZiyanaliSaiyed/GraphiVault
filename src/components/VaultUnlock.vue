@@ -22,6 +22,7 @@
           class="w-full px-3 py-2 border border-gv-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gv-accent focus:border-gv-accent bg-gv-primary text-gv-text"
           :disabled="isLoading"
           placeholder="Enter your master password"
+          @keyup.enter="handleSubmit"
         />
       </div>
       
@@ -37,6 +38,7 @@
           class="w-full px-3 py-2 border border-gv-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gv-accent focus:border-gv-accent bg-gv-primary text-gv-text"
           :disabled="isLoading"
           placeholder="Confirm your master password"
+          @keyup.enter="handleSubmit"
         />
       </div>
       
