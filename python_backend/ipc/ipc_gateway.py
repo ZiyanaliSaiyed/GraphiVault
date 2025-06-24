@@ -494,6 +494,31 @@ class IPCGateway:
                 'error': f'Decryption error: {str(e)}'
             }
 
+    def vault_exists(self) -> Dict[str, Any]:
+        """Check if the vault exists at the specified path."""
+        try:
+            vault_path = Path(self.vault_path)
+            
+            # Check for essential vault components
+            config_exists = (vault_path / 'vault.config').exists()
+            key_exists = (vault_path / 'vault.key').exists()
+            db_dir_exists = (vault_path / 'database').exists()
+
+            exists = vault_path.is_dir() and config_exists and key_exists and db_dir_exists
+            
+            return {
+                'success': True,
+                'data': {
+                    'exists': exists
+                }
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Error checking vault existence: {str(e)}',
+                'traceback': traceback.format_exc()
+            }
+
 
 def main():
     """Main entry point for IPC Gateway"""

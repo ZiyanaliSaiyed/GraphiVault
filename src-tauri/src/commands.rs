@@ -439,3 +439,9 @@ pub async fn get_vault_status(
     let args = HashMap::new();
     call_python_backend(&app_handle, "get_vault_status", &args).await
 }
+
+#[tauri::command]
+pub async fn vault_exists(app_handle: tauri::AppHandle) -> Result<PythonBackendResponse, String> {
+    let args = HashMap::new();
+    call_python_backend(&app_handle, "vault_exists", &args).await
+}
