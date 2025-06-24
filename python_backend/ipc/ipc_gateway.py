@@ -497,6 +497,11 @@ class IPCGateway:
 
 def main():
     """Main entry point for IPC Gateway"""
+    # Fix for UnicodeEncodeError on Windows when printing JSON with emojis
+    if sys.platform == "win32":
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+
     parser = argparse.ArgumentParser(description='GraphiVault IPC Gateway')
     parser.add_argument('command', help='Command to execute')
     parser.add_argument('--vault-path', required=True, help='Path to vault directory')

@@ -11,6 +11,10 @@ import uuid
 from pathlib import Path
 from typing import Dict, Optional, Any
 from datetime import datetime, timezone
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 try:
     from ..crypto.crypto_controller import CryptoController
@@ -50,12 +54,15 @@ class VaultManager:
         """
         Create a new vault with proper directory structure
         """
+        logging.info(f"Creating new vault at: {self.vault_path}")
         try:
             # Create vault root directory
+            logging.info("Creating vault root directory...")
             self.vault_path.mkdir(parents=True, exist_ok=True)
             
             # Create subdirectories
             for dir_name, dir_path in self.directories.items():
+                logging.info(f"Creating subdirectory: {dir_name}")
                 dir_path.mkdir(exist_ok=True)
                 
                 # Create .gitkeep files to preserve directory structure
@@ -63,6 +70,7 @@ class VaultManager:
                 gitkeep.touch()
             
             # Create vault configuration
+            logging.info("Creating vault configuration file...")
             vault_config = {
                 'vault_id': str(uuid.uuid4()),
                 'version': '1.0.0',
@@ -79,13 +87,16 @@ class VaultManager:
             # Write configuration
             with open(self.vault_config_path, 'w') as f:
                 json.dump(vault_config, f, indent=2)
+            logging.info("Vault configuration file created successfully.")
             
             # Create vault key file (encrypted master key storage)
             self._create_vault_key_file()
             
+            logging.info("Vault creation process completed successfully.")
             return True
             
-        except Exception:
+        except Exception as e:
+            logging.error(f"An error occurred during vault creation: {e}", exc_info=True)
             # Clean up on failure
             if self.vault_path.exists():
                 self._cleanup_vault()

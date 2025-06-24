@@ -14,6 +14,10 @@ from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timezone
 from dataclasses import dataclass
 import uuid
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # GraphiVault Database Models
 @dataclass
@@ -67,6 +71,7 @@ class StorageInterface:
     
     def __init__(self, db_path: str, crypto_controller: CryptoController):
         """Initialize storage interface"""
+        logging.info(f"Initializing StorageInterface with db_path: {db_path}")
         self.db_path = Path(db_path)
         self.crypto = crypto_controller
         self.connection_lock = threading.Lock()
@@ -99,92 +104,98 @@ class StorageInterface:
     
     def _initialize_database(self) -> None:
         """Initialize GraphiVault database schema according to design specifications"""
-        with self.connection_lock:
-            conn = self._get_connection()
-            
-            # Configure SQLite for optimal security and performance
-            conn.execute("PRAGMA foreign_keys = ON")
-            conn.execute("PRAGMA journal_mode = WAL")
-            conn.execute("PRAGMA synchronous = NORMAL")
-            conn.execute("PRAGMA secure_delete = ON")
-            conn.execute("PRAGMA auto_vacuum = INCREMENTAL")
-            conn.execute("PRAGMA page_size = 4096")
-            conn.execute("PRAGMA cache_size = -64000")  # 64MB cache
-            conn.execute("PRAGMA temp_store = MEMORY")
-            
-            # Create images table - core metadata for each image file
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS images (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    file_hash TEXT NOT NULL UNIQUE,
-                    file_name TEXT NOT NULL,
-                    storage_path TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    file_size INTEGER NOT NULL,
-                    is_deleted BOOLEAN NOT NULL DEFAULT 0
-                )
-            """)
-            
-            # Create tags table - encrypted user-defined tags
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS tags (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    image_id INTEGER NOT NULL,
-                    tag_name TEXT NOT NULL,
-                    tag_type TEXT,
-                    created_at TEXT NOT NULL,
-                    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
-                )
-            """)
-            
-            # Create annotations table - encrypted notes/descriptions
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS annotations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    image_id INTEGER NOT NULL,
-                    note TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
-                )
-            """)
-            
-            # Create vault_meta table - vault-level config and settings
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS vault_meta (
-                    key TEXT PRIMARY KEY,
-                    value TEXT NOT NULL,
-                    last_updated TEXT NOT NULL
-                )
-            """)
-            
-            # Create auth_logs table - access attempts and critical operations
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS auth_logs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_type TEXT NOT NULL,
-                    timestamp TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    details TEXT
-                )
-            """)
-            
-            # Create performance indexes
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_images_file_hash ON images(file_hash)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_images_created_at ON images(created_at)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_images_updated_at ON images(updated_at)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_images_storage_path ON images(storage_path)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_tags_image_id ON tags(image_id)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_tags_created_at ON tags(created_at)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_annotations_image_id ON annotations(image_id)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_auth_logs_timestamp ON auth_logs(timestamp)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_auth_logs_event_type ON auth_logs(event_type)")
-            
-            # Set initial vault metadata
-            self._initialize_vault_metadata(conn)
-            
-            conn.commit()
-    
+        logging.info("Starting database initialization...")
+        try:
+            with self.connection_lock:
+                conn = self._get_connection()
+                
+                # Configure SQLite for optimal security and performance
+                conn.execute("PRAGMA foreign_keys = ON")
+                conn.execute("PRAGMA journal_mode = WAL")
+                conn.execute("PRAGMA synchronous = NORMAL")
+                conn.execute("PRAGMA secure_delete = ON")
+                conn.execute("PRAGMA auto_vacuum = INCREMENTAL")
+                conn.execute("PRAGMA page_size = 4096")
+                conn.execute("PRAGMA cache_size = -64000")  # 64MB cache
+                conn.execute("PRAGMA temp_store = MEMORY")
+                
+                # Create images table - core metadata for each image file
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS images (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        file_hash TEXT NOT NULL UNIQUE,
+                        file_name TEXT NOT NULL,
+                        storage_path TEXT NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
+                        file_size INTEGER NOT NULL,
+                        is_deleted BOOLEAN NOT NULL DEFAULT 0
+                    )
+                """)
+                
+                # Create tags table - encrypted user-defined tags
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS tags (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        image_id INTEGER NOT NULL,
+                        tag_name TEXT NOT NULL,
+                        tag_type TEXT,
+                        created_at TEXT NOT NULL,
+                        FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                # Create annotations table - encrypted notes/descriptions
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS annotations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        image_id INTEGER NOT NULL,
+                        note TEXT NOT NULL,
+                        created_at TEXT NOT NULL,
+                        FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                # Create vault_meta table - vault-level config and settings
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS vault_meta (
+                        key TEXT PRIMARY KEY,
+                        value TEXT NOT NULL,
+                        last_updated TEXT NOT NULL
+                    )
+                """)
+                
+                # Create auth_logs table - access attempts and critical operations
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS auth_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_type TEXT NOT NULL,
+                        timestamp TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        details TEXT
+                    )
+                """)
+                
+                # Create performance indexes
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_images_file_hash ON images(file_hash)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_images_created_at ON images(created_at)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_images_updated_at ON images(updated_at)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_images_storage_path ON images(storage_path)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_tags_image_id ON tags(image_id)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_tags_created_at ON tags(created_at)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_annotations_image_id ON annotations(image_id)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_auth_logs_timestamp ON auth_logs(timestamp)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_auth_logs_event_type ON auth_logs(event_type)")
+                
+                # Set initial vault metadata
+                self._initialize_vault_metadata(conn)
+                
+                conn.commit()
+            logging.info("Database initialization completed successfully.")
+        except Exception as e:
+            logging.error(f"An error occurred during database initialization: {e}", exc_info=True)
+            raise
+
     def _initialize_vault_metadata(self, conn: sqlite3.Connection) -> None:
         """Initialize vault metadata with default values"""
         from datetime import datetime, timezone

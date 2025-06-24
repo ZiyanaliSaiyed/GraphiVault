@@ -19,6 +19,10 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.backends import default_backend
 import base64
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class CryptoController:
@@ -53,6 +57,7 @@ class CryptoController:
         
     def save_crypto_params(self, vault_path: Path) -> bool:
         """Save cryptographic parameters to vault key file"""
+        logging.info(f"Saving crypto params to {vault_path / 'vault.key'}")
         try:
             key_file = vault_path / 'vault.key'
             
@@ -69,9 +74,11 @@ class CryptoController:
             with open(key_file, 'w') as f:
                 json.dump(crypto_params, f, indent=2)
             
+            logging.info("Crypto params saved successfully.")
             return True
             
-        except Exception:
+        except Exception as e:
+            logging.error(f"Failed to save crypto params: {e}", exc_info=True)
             return False
     
     def load_crypto_params(self, vault_path: Path) -> bool:

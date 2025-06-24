@@ -119,10 +119,12 @@ class GraphiVaultCore:
             # Create vault structure
             if not self.vault_manager.create_vault():
                 return False
-              # Initialize crypto with master password
+
+            # Initialize crypto with master password
             if not self.crypto.initialize_master_key(master_password, self.vault_path):
                 return False
-              # Create session
+
+            # Create session
             session_key = self.session_manager.create_session(master_password)
             if not session_key:
                 return False
