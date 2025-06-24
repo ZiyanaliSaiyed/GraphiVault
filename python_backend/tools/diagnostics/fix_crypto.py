@@ -100,8 +100,8 @@ def fix_crypto_controller(log: DiagnosticLogger) -> bool:
                     print(f"CryptoController: Failed to derive master key: {e}")
                     self._master_key = None
             else:
-                print("CryptoController: No salt available, using placeholder key")
-                self._master_key = b'PLACEHOLDER_KEY_FOR_TEST123'
+                print("CryptoController: No salt available, master key cannot be derived.")
+                self._master_key = None
                 
             # WARNING: This is NOT secure and is only for diagnostic purposes!
             """
@@ -171,7 +171,8 @@ def create_test_vault_stubs(vault_path: Path, log: DiagnosticLogger) -> bool:
         
         # This should match the expected salt for password "test123"
         # In a real system, this would be randomly generated
-        salt_bytes = b'ThisIsATestSaltForTheTestPasswordTest123'
+        import secrets
+        salt_bytes = secrets.token_bytes(32)
         
         vault_key = {
             "algorithm": "AES-256-GCM",
