@@ -91,13 +91,14 @@ def fix_crypto_controller(log: DiagnosticLogger) -> bool:
                         backend=default_backend()
                     )
                     
-                    # Derive a placeholder key for test password 'test123'
-                    test_password = b'test123'
+                    # Securely prompt for the test password instead of hardcoding it
+                    import getpass
+                    test_password = getpass.getpass("Enter the test password to derive the key: ").encode('utf-8')
                     self._master_key = kdf.derive(test_password)
-                    print("CryptoController: Derived master key from 'test123' password")
+                    print("CryptoController: Derived master key from provided password")
                 except Exception as e:
                     print(f"CryptoController: Failed to derive master key: {e}")
-                    self._master_key = b'PLACEHOLDER_KEY_FOR_TEST123'
+                    self._master_key = None
             else:
                 print("CryptoController: No salt available, using placeholder key")
                 self._master_key = b'PLACEHOLDER_KEY_FOR_TEST123'
