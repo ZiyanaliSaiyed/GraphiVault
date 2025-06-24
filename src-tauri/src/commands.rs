@@ -65,8 +65,7 @@ async fn call_python_backend(
             .join("main.py")
             .to_string_lossy()
             .to_string(),
-        "--method".to_string(),
-        method.to_string(),
+        method.to_string(), // Command as positional argument
         "--vault-path".to_string(),
         vault_path.to_string_lossy().to_string(),
     ];
@@ -338,11 +337,11 @@ pub async fn initialize_vault(
 ) -> Result<PythonBackendResponse, String> {
     let mut args = HashMap::new();
     args.insert(
-        "master_password".to_string(),
+        "password".to_string(),
         serde_json::Value::String(master_password),
     );
 
-    call_python_backend(&app_handle, "initialize_vault", &args).await
+    call_python_backend(&app_handle, "initialize", &args).await
 }
 
 #[tauri::command]
@@ -352,17 +351,17 @@ pub async fn unlock_vault(
 ) -> Result<PythonBackendResponse, String> {
     let mut args = HashMap::new();
     args.insert(
-        "master_password".to_string(),
+        "password".to_string(),
         serde_json::Value::String(master_password),
     );
 
-    call_python_backend(&app_handle, "unlock_vault", &args).await
+    call_python_backend(&app_handle, "unlock", &args).await
 }
 
 #[tauri::command]
 pub async fn lock_vault(app_handle: tauri::AppHandle) -> Result<PythonBackendResponse, String> {
     let args = HashMap::new();
-    call_python_backend(&app_handle, "lock_vault", &args).await
+    call_python_backend(&app_handle, "lock", &args).await
 }
 
 #[tauri::command]
@@ -378,10 +377,12 @@ pub async fn process_image_file(
     );
     args.insert(
         "tags".to_string(),
-        serde_json::Value::Array(tags.into_iter().map(serde_json::Value::String).collect()),
+        serde_json::Value::String(
+            serde_json::to_string(&tags).unwrap_or_else(|_| "[]".to_string()),
+        ),
     );
 
-    call_python_backend(&app_handle, "add_encrypted_image", &args).await
+    call_python_backend(&app_handle, "add_image", &args).await
 }
 
 #[tauri::command]
@@ -394,7 +395,9 @@ pub async fn search_images(
     args.insert("query".to_string(), serde_json::Value::String(query));
     args.insert(
         "tags".to_string(),
-        serde_json::Value::Array(tags.into_iter().map(serde_json::Value::String).collect()),
+        serde_json::Value::String(
+            serde_json::to_string(&tags).unwrap_or_else(|_| "[]".to_string()),
+        ),
     );
 
     call_python_backend(&app_handle, "search_images", &args).await
@@ -408,10 +411,11 @@ pub async fn get_decrypted_image(
     let mut args = HashMap::new();
     args.insert(
         "image_id".to_string(),
-        serde_json::Value::Number(serde_json::Number::from(image_id)),
+        serde_json::Value::String(image_id.to_string()),
     );
+    args.insert("decrypt".to_string(), serde_json::Value::Bool(true));
 
-    call_python_backend(&app_handle, "get_decrypted_image", &args).await
+    call_python_backend(&app_handle, "get_image", &args).await
 }
 
 #[tauri::command]
@@ -422,8 +426,16 @@ pub async fn get_image_thumbnail(
     let mut args = HashMap::new();
     args.insert(
         "image_id".to_string(),
-        serde_json::Value::Number(serde_json::Number::from(image_id)),
+        serde_json::Value::String(image_id.to_string()),
     );
 
-    call_python_backend(&app_handle, "get_thumbnail", &args).await
+    call_python_backend(&app_handle, "get_image", &args).await
+}
+
+#[tauri::command]
+pub async fn get_vault_status(
+    app_handle: tauri::AppHandle,
+) -> Result<PythonBackendResponse, String> {
+    let args = HashMap::new();
+    call_python_backend(&app_handle, "get_vault_status", &args).await
 }

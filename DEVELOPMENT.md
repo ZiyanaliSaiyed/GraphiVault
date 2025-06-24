@@ -55,14 +55,24 @@ npm run format
 GraphiVault/
 ├── src/                    # Vue.js frontend
 │   ├── components/         # Reusable Vue components
-│   ├── views/             # Page components
-│   ├── stores/            # Pinia state management
-│   ├── utils/             # Utility functions
-│   └── types/             # TypeScript type definitions
-├── src-tauri/             # Rust backend
-│   └── src/               # Rust source code
-├── python_backend/        # Python scripts for encryption
-└── .vscode/              # VS Code configuration
+│   ├── views/              # Page components
+│   ├── stores/             # Pinia state management
+│   ├── utils/              # Utility functions
+│   └── types/              # TypeScript type definitions
+├── src-tauri/              # Rust backend
+│   └── src/                # Rust source code
+├── python_backend/         # Python backend
+│   ├── core/               # Core functionality
+│   ├── crypto/             # Encryption functionality
+│   ├── database/           # Database operations
+│   ├── ipc/                # Inter-process communication
+│   ├── storage/            # Storage operations
+│   ├── ui/                 # UI-related functionality
+│   ├── utils/              # Utility functions
+│   └── tools/              # Development tools
+│       ├── diagnostics/    # Diagnostic tools
+│       └── tests/          # Test scripts
+└── test_vault/            # Test vault for development
 ```
 
 ## Key Features Implementation Status

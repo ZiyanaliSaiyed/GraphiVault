@@ -141,7 +141,6 @@ const webAPI: GraphiVaultAPI = {
     console.log('Web mode: File decryption simulated')
     return Promise.resolve(encrypted_file_path.replace('.encrypted', ''))
   },
-
   // Python Backend Integration (mock implementations for web)
   async initializeVault(master_password: string): Promise<PythonBackendResponse> {
     console.log('Web mode: Vault initialization simulated')
@@ -149,6 +148,19 @@ const webAPI: GraphiVaultAPI = {
       success: true,
       message: 'Vault initialized (simulated)',
       data: { vault_id: 'demo_vault_123' }
+    })
+  },
+
+  async getVaultStatus(): Promise<PythonBackendResponse> {
+    console.log('Web mode: Vault status check simulated')
+    return Promise.resolve({
+      success: true,
+      data: {
+        vault_exists: true,
+        is_locked: false,
+        vault_path: '/tmp/demo_vault',
+        message: 'Vault unlocked (simulated)'
+      }
     })
   },
 
@@ -301,10 +313,13 @@ const tauriAPI: GraphiVaultAPI = {
   },
   async decryptFile(encrypted_file_path: string, password: string): Promise<string> {
     return await invoke('decrypt_file', { encryptedFilePath: encrypted_file_path, password })
-  },
-  // Python Backend Integration
+  },  // Python Backend Integration
   async initializeVault(master_password: string): Promise<PythonBackendResponse> {
     return await invoke('initialize_vault', { masterPassword: master_password })
+  },
+
+  async getVaultStatus(): Promise<PythonBackendResponse> {
+    return await invoke('get_vault_status')
   },
 
   async unlockVault(master_password: string): Promise<PythonBackendResponse> {

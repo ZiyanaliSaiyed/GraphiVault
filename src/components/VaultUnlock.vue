@@ -90,23 +90,27 @@ const successMessage = ref('')
 const isInitialized = ref(false)
 
 const isPasswordValid = computed(() => {
-  const hasPassword = password.value && password.value.length >= 3 // Relaxed for testing
+  // Check if password exists and has minimum length
+  const hasPassword = password.value && password.value.trim().length >= 3 // Relaxed for testing
+  // For new vaults, check if confirmation password matches
+  const passwordsMatch = password.value === confirmPassword.value
+  
   console.log('🔑 Password validation check:', {
     hasPassword,
-    passwordLength: password.value?.length || 0,
+    passwordLength: password.value?.trim().length || 0,
     isInitialized: isInitialized.value,
-    confirmPasswordMatch: !isInitialized.value ? password.value === confirmPassword.value : true
+    confirmPasswordMatch: !isInitialized.value ? passwordsMatch : true
   })
   
   if (!hasPassword) return false
   
   if (!isInitialized.value) {
     // For new vault, passwords must match and be at least 3 chars (relaxed for testing)
-    return password.value === confirmPassword.value && password.value.length >= 3
+    return passwordsMatch && password.value.trim().length >= 3
   }
   
   // For existing vault, just need the password
-  return password.value.length >= 3
+  return password.value.trim().length >= 3
 })
 
 const checkVaultStatus = async () => {
@@ -115,10 +119,18 @@ const checkVaultStatus = async () => {
     // Check if vault is already initialized by trying to get vault info
     const vaultInfo = await tauriAPI.getVaultInfo()
     console.log('📊 Vault info:', vaultInfo)
-    isInitialized.value = vaultInfo.status === 'active' || vaultInfo.total_images >= 0
-    console.log('🏁 Vault initialization status:', isInitialized.value)
-  } catch (error) {
-    console.log('⚠️ Could not get vault info, assuming uninitialized:', error)
+    
+    // Make sure vaultInfo is not null or undefined before accessing properties
+    if (vaultInfo) {
+      isInitialized.value = vaultInfo.status === 'active' || 
+                           (vaultInfo.total_images !== undefined && vaultInfo.total_images >= 0)
+      console.log('🏁 Vault initialization status:', isInitialized.value)
+    } else {
+      console.log('⚠️ Vault info is null or undefined, assuming uninitialized')
+      isInitialized.value = false
+    }
+  } catch (error: any) {
+    console.log('⚠️ Could not get vault info, assuming uninitialized:', error?.message || error)
     // If we can't get vault info, assume it needs to be initialized
     isInitialized.value = false
   }
@@ -140,9 +152,8 @@ const handleSubmit = async () => {
   isLoading.value = true
   errorMessage.value = ''
   successMessage.value = ''
-  
-  try {
-    let result
+    try {
+    let result: any = null
     
     if (isInitialized.value) {
       // Unlock existing vault
@@ -155,6 +166,11 @@ const handleSubmit = async () => {
     }
     
     console.log('🔐 Backend response:', result)
+    
+    // Make sure we have a valid result object
+    if (!result) {
+      throw new Error('Empty response received from backend')
+    }
     
     if (result.success) {
       successMessage.value = result.message || 'Operation completed successfully'
@@ -182,9 +198,9 @@ const handleSubmit = async () => {
       errorMessage.value = result.error || 'Operation failed'
     }
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('💥 Vault operation error:', error)
-    errorMessage.value = 'An unexpected error occurred. Please try again.'
+    errorMessage.value = error?.message || 'An unexpected error occurred. Please try again.'
   } finally {
     isLoading.value = false
     console.log('🔐 Vault unlock attempt finished')

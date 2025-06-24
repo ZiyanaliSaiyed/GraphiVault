@@ -36,6 +36,7 @@ fn main() {
             commands::encrypt_file,
             commands::decrypt_file,
             commands::initialize_vault,
+            commands::get_vault_status,
             commands::unlock_vault,
             commands::lock_vault,
             commands::process_image_file,

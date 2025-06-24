@@ -9,9 +9,11 @@
             <div class="text-2xl gv-transition-smooth group-hover:animate-glow">🛡️</div>
             <span class="gv-heading-md gv-text-gradient font-mono">GraphiVault</span>
           </RouterLink>
-          
-          <!-- Desktop Navigation -->
+            <!-- Desktop Navigation -->
           <div class="hidden md:flex items-center space-x-1">
+            <RouterLink to="/dashboard" class="gv-text-meta hover:text-blue-400 px-4 py-2 rounded-lg gv-transition-smooth hover:bg-gray-800/50">
+              DASHBOARD
+            </RouterLink>
             <RouterLink to="/vault" class="gv-text-meta hover:text-blue-400 px-4 py-2 rounded-lg gv-transition-smooth hover:bg-gray-800/50">
               VAULT
             </RouterLink>
@@ -28,10 +30,12 @@
             </svg>
           </button>
         </div>
-        
-        <!-- Mobile Menu -->
+          <!-- Mobile Menu -->
         <div v-if="showMobileMenu" class="md:hidden py-4 border-t border-gray-800 animate-slide-up">
           <div class="flex flex-col space-y-2">
+            <RouterLink to="/dashboard" class="gv-text-meta hover:text-blue-400 px-4 py-3 rounded-lg gv-transition-smooth hover:bg-gray-800/50">
+              DASHBOARD
+            </RouterLink>
             <RouterLink to="/vault" class="gv-text-meta hover:text-blue-400 px-4 py-3 rounded-lg gv-transition-smooth hover:bg-gray-800/50">
               VAULT
             </RouterLink>
@@ -126,7 +130,7 @@
           </div>
         </div>        <!-- Action Buttons - Mission Control -->
         <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-20">
-          <RouterLink to="/vault" class="gv-button-primary group">
+          <RouterLink to="/dashboard" class="gv-button-primary group">
             <span class="mr-3">Enter Vault</span>
             <svg class="w-5 h-5 gv-transition-smooth group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />

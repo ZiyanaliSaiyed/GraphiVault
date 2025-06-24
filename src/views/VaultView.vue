@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useVaultStore } from '../stores/vault'
 import { tauriAPI } from '../utils/tauri'
 import ThemeToggle from '../components/ThemeToggle.vue'
@@ -141,6 +141,7 @@ import FileUpload from '../components/FileUpload.vue'
 import ImageCard from '../components/ImageCard.vue'
 import VaultUnlock from '../components/VaultUnlock.vue'
 
+const router = useRouter()
 const vaultStore = useVaultStore()
 
 const handleFilesSelected = async (files: File[]) => {
@@ -202,11 +203,15 @@ const handleLockVault = async () => {
 const handleVaultUnlocked = async () => {
   console.log('Vault unlocked successfully')
   await vaultStore.refreshImages()
+  // Redirect to dashboard after successful unlock
+  router.push('/dashboard')
 }
 
 const handleVaultInitialized = async () => {
   console.log('Vault initialized successfully')
   await vaultStore.refreshImages()
+  // Redirect to dashboard after successful initialization
+  router.push('/dashboard')
 }
 
 const toggleTagFilter = (tag: string) => {

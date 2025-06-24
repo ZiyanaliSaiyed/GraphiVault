@@ -102,9 +102,9 @@ export interface GraphiVaultAPI {
   // Encryption
   encryptFile(file_path: string, password: string): Promise<string>;
   decryptFile(encrypted_file_path: string, password: string): Promise<string>;
-
   // Python Backend Integration
   initializeVault(master_password: string): Promise<PythonBackendResponse>;
+  getVaultStatus(): Promise<PythonBackendResponse>;
   unlockVault(master_password: string): Promise<PythonBackendResponse>;
   lockVault(): Promise<PythonBackendResponse>;
   processImageFile(file_path: string, tags: string[]): Promise<PythonBackendResponse>;

@@ -10,7 +10,7 @@
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/ZiyanaliSaiyed/GraphiVault)
 
-[**📥 Download**](https://github.com/ZiyanaliSaiyed/GraphiVault/releases) • [**📖 Documentation**](https://github.com/ZiyanaliSaiyed/GraphiVault/wiki) • [**🐛 Report Bug**](https://github.com/ZiyanaliSaiyed/GraphiVault/issues) • [**💡 Request Feature**](https://github.com/ZiyanaliSaiyed/GraphiVault/issues)
+[**📥 Download**](https://github.com/ZiyanaliSaiyed/GraphiVault/releases) • [**📖 Documentation**](./docs/PROJECT_STRUCTURE.md) • [**🐛 Report Bug**](https://github.com/ZiyanaliSaiyed/GraphiVault/issues) • [**💡 Request Feature**](https://github.com/ZiyanaliSaiyed/GraphiVault/issues)
 
 ---
 
@@ -87,7 +87,13 @@ Unlike cloud-based services that expose your sensitive media to potential breach
 
 </div>
 
-## 🚀 Quick Start
+## � Documentation
+
+- [Project Structure](./docs/PROJECT_STRUCTURE.md) - Detailed project structure documentation
+- [Reorganization](./docs/REORGANIZATION.md) - Details about project reorganization and cleanup
+- [Contributing](./CONTRIBUTING.md) - Guidelines for contributors
+
+## �🚀 Quick Start
 
 ### Prerequisites
 
@@ -148,6 +154,7 @@ If you see errors like `OUT_DIR env var is not set`, make sure you are running t
 - [x] Core image vault functionality
 - [x] Client-side encryption
 - [x] Metadata management
+- [x] Project structure reorganization
 - [ ] Advanced search and filtering
 - [ ] Comprehensive testing suite
 - [ ] Performance optimizations
