@@ -116,22 +116,16 @@ const isPasswordValid = computed(() => {
 const checkVaultStatus = async () => {
   try {
     console.log('🔍 Checking vault status...')
-    // Check if vault is already initialized by trying to get vault info
-    const vaultInfo = await tauriAPI.getVaultInfo()
-    console.log('📊 Vault info:', vaultInfo)
+    // A more reliable way to check for initialization is to see if the vault config exists.
+    const vaultExists = await tauriAPI.vaultExists()
+    console.log('📊 Vault existence check:', vaultExists)
     
-    // Make sure vaultInfo is not null or undefined before accessing properties
-    if (vaultInfo) {
-      isInitialized.value = vaultInfo.status === 'active' || 
-                           (vaultInfo.total_images !== undefined && vaultInfo.total_images >= 0)
-      console.log('🏁 Vault initialization status:', isInitialized.value)
-    } else {
-      console.log('⚠️ Vault info is null or undefined, assuming uninitialized')
-      isInitialized.value = false
-    }
+    isInitialized.value = vaultExists
+    console.log('🏁 Vault initialization status:', isInitialized.value)
+
   } catch (error: any) {
-    console.log('⚠️ Could not get vault info, assuming uninitialized:', error?.message || error)
-    // If we can't get vault info, assume it needs to be initialized
+    console.error('💥 Error checking vault status:', error)
+    // If there's any error, assume uninitialized and log it.
     isInitialized.value = false
   }
 }
