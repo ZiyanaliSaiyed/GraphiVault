@@ -372,7 +372,7 @@ pub async fn process_image_file(
 ) -> Result<PythonBackendResponse, String> {
     let mut args = HashMap::new();
     args.insert(
-        "file_path".to_string(),
+        "file-path".to_string(),
         serde_json::Value::String(file_path),
     );
     args.insert(
@@ -410,7 +410,7 @@ pub async fn get_decrypted_image(
 ) -> Result<PythonBackendResponse, String> {
     let mut args = HashMap::new();
     args.insert(
-        "image_id".to_string(),
+        "image-id".to_string(),
         serde_json::Value::String(image_id.to_string()),
     );
     args.insert("decrypt".to_string(), serde_json::Value::Bool(true));
@@ -425,7 +425,7 @@ pub async fn get_image_thumbnail(
 ) -> Result<PythonBackendResponse, String> {
     let mut args = HashMap::new();
     args.insert(
-        "image_id".to_string(),
+        "image-id".to_string(),
         serde_json::Value::String(image_id.to_string()),
     );
 
