@@ -12,12 +12,8 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 import traceback
 
-try:
-    from ..core.core_engine import GraphiVaultCore
-    from ..storage.storage_interface import StorageInterface
-except ImportError:
-    from core.core_engine import GraphiVaultCore
-    from storage.storage_interface import StorageInterface
+from core.core_engine import GraphiVaultCore
+from storage.storage_interface import StorageInterface
 
 
 class IPCGateway:
@@ -638,121 +634,98 @@ def main():
     parser = argparse.ArgumentParser(description='GraphiVault IPC Gateway')
     parser.add_argument('command', help='Command to execute')
     parser.add_argument('--vault-path', required=True, help='Path to vault directory')
-    parser.add_argument('--password', help='Master password')
-    parser.add_argument('--file-contents', help='File contents for operations (base64 encoded)')
-    parser.add_argument('--image-id', help='Image ID for operations')
-    parser.add_argument('--output-path', help='Output path for operations')
-    parser.add_argument('--query', help='Search query')
-    parser.add_argument('--tags', help='Tags (JSON array)')
-    parser.add_argument('--metadata', help='Metadata (JSON object)')
-    parser.add_argument('--config', help='Configuration (JSON object)')
-    parser.add_argument('--decrypt', action='store_true', help='Decrypt image data')
-    parser.add_argument('--limit', type=int, help='Limit for pagination')
-    parser.add_argument('--offset', type=int, default=0, help='Offset for pagination')
     
-    args = parser.parse_args()
+    # Parse command-line arguments (command and vault-path)
+    cli_args, _ = parser.parse_known_args()
+
+    # Read payload from stdin
+    payload = {}
+    if not sys.stdin.isatty():
+        stdin_data = sys.stdin.read()
+        if stdin_data:
+            try:
+                payload = json.loads(stdin_data)
+            except json.JSONDecodeError as e:
+                print(json.dumps({
+                    'success': False, 
+                    'error': 'Invalid JSON payload from stdin',
+                    'details': str(e),
+                    'stdin_data': stdin_data
+                }), file=sys.stderr)
+                sys.exit(1)
     
     try:
-        gateway = IPCGateway(args.vault_path)
+        gateway = IPCGateway(cli_args.vault_path)
         
-        # Enhanced debugging for received arguments
-        print(f"Command: {args.command}", file=sys.stderr)
-        print(f"Vault path: {args.vault_path}", file=sys.stderr)
-        if args.tags:
-            print(f"Raw tags value: {args.tags!r}", file=sys.stderr)
-        if args.metadata:
-            print(f"Raw metadata value: {args.metadata!r}", file=sys.stderr)
-        
-        # Parse JSON arguments with enhanced error handling
-        try:
-            tags = json.loads(args.tags) if args.tags else []
-        except (json.JSONDecodeError, TypeError) as e:
-            print(f"Error parsing tags: {e}, raw value: {args.tags!r}", file=sys.stderr)
-            tags = []
-            
-        try:
-            metadata = json.loads(args.metadata) if args.metadata else {}
-        except (json.JSONDecodeError, TypeError) as e:
-            print(f"Error parsing metadata: {e}, raw value: {args.metadata!r}", file=sys.stderr)
-            metadata = {}
-            
-        try:
-            config = json.loads(args.config) if args.config else {}
-        except (json.JSONDecodeError, TypeError) as e:
-            print(f"Error parsing config: {e}, raw value: {args.config!r}", file=sys.stderr)
-            config = {}
+        # Get arguments from payload, with defaults
+        password = payload.get('password')
+        file_contents = payload.get('file_contents')
+        image_id = payload.get('image_id')
+        query = payload.get('query')
+        tags = payload.get('tags', [])
+        metadata = payload.get('metadata', {})
+        config = payload.get('config', {})
+        decrypt = payload.get('decrypt', False)
+        limit = payload.get('limit')
+        offset = payload.get('offset', 0)
         
         # Execute command
         result = None
+        command = cli_args.command
         
-        if args.command == 'initialize':
-            if not args.password:
+        if command == 'initialize':
+            if not password:
                 result = {'success': False, 'error': 'Password required'}
             else:
-                result = gateway.initialize_vault(args.password, config)
+                result = gateway.initialize_vault(password, config)
         
-        elif args.command == 'unlock':
-            if not args.password:
+        elif command == 'unlock':
+            if not password:
                 result = {'success': False, 'error': 'Password required'}
             else:
-                result = gateway.unlock_vault(args.password, config)
+                result = gateway.unlock_vault(password, config)
         
-        elif args.command == 'lock':
+        elif command == 'lock':
             result = gateway.lock_vault()
         
-        elif args.command == 'get_vault_status':
+        elif command == 'get_vault_status':
             result = gateway.get_vault_status()
         
-        elif args.command == 'add_image':
-            if not args.file_contents:
+        elif command == 'add_image':
+            if not file_contents:
                 result = {'success': False, 'error': 'File contents required'}
             else:
-                result = gateway.add_image(args.file_contents, tags, metadata)
+                result = gateway.add_image(file_contents, tags, metadata)
         
-        elif args.command == 'get_image':
-            if not args.image_id:
+        elif command == 'get_image':
+            if not image_id:
                 result = {'success': False, 'error': 'Image ID required'}
             else:
-                result = gateway.get_image(args.image_id, args.decrypt)
+                result = gateway.get_image(image_id, decrypt)
         
-        elif args.command == 'get_all_images':
-            result = gateway.get_all_images(args.limit, args.offset)
+        elif command == 'get_all_images':
+            result = gateway.get_all_images(limit, offset)
         
-        elif args.command == 'search_images':
-            if not args.query:
+        elif command == 'search_images':
+            if not query:
                 result = {'success': False, 'error': 'Query required'}
             else:
-                tag_filters = json.loads(args.tags) if args.tags else []
-                result = gateway.search_images(args.query, tag_filters)
+                result = gateway.search_images(query, tags)
         
-        elif args.command == 'delete_image':
-            if not args.image_id:
+        elif command == 'delete_image':
+            if not image_id:
                 result = {'success': False, 'error': 'Image ID required'}
             else:
-                result = gateway.delete_image(args.image_id)
+                result = gateway.delete_image(image_id)
         
-        elif args.command == 'get_stats':
+        elif command == 'get_stats':
             result = gateway.get_vault_stats()
         
-        elif args.command == 'get_vault_status':
-            result = gateway.get_vault_status()
-        
-        elif args.command == 'vault_exists':
+        elif command == 'vault_exists':
             result = gateway.vault_exists()
         
-        elif args.command == 'encrypt_file':
-            if not args.file_path or not args.password:
-                result = {'success': False, 'error': 'File path and password required'}
-            else:
-                result = gateway.encrypt_file(args.file_path, args.password)
-        
-        elif args.command == 'decrypt_file':
-            if not args.file_path or not args.password or not args.output_path:
-                result = {'success': False, 'error': 'File path, password, and output path required'}
-            else:
-                result = gateway.decrypt_file(args.file_path, args.password, args.output_path)
         else:
-            result = {'success': False, 'error': f'Unknown command: {args.command}'}
+            result = {'success': False, 'error': f'Unknown command: {command}'}
         
         # Output result as JSON with UTF-8 compliance
         print(json.dumps(result, indent=2, ensure_ascii=False))

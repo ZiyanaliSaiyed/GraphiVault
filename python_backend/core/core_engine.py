@@ -14,26 +14,16 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 import json
+import sys
 
-try:
-    from ..crypto.crypto_controller import CryptoController
-    from .vault_manager import VaultManager
-    from ..ui.image_processor import ImageProcessor
-    from ..utils.tag_manager import TagManager
-    from ..database.search_engine import SearchEngine
-    from ..utils.audit_logger import AuditLogger
-    from .session_manager import SessionManager
-    from ..storage.storage_interface import StorageInterface, ImageRecord
-except ImportError:
-    # Fallback for direct execution
-    from crypto.crypto_controller import CryptoController
-    from core.vault_manager import VaultManager
-    from ui.image_processor import ImageProcessor
-    from utils.tag_manager import TagManager
-    from database.search_engine import SearchEngine
-    from utils.audit_logger import AuditLogger
-    from core.session_manager import SessionManager
-    from storage.storage_interface import StorageInterface, ImageRecord
+from crypto.crypto_controller import CryptoController
+from core.vault_manager import VaultManager
+from ui.image_processor import ImageProcessor
+from utils.tag_manager import TagManager
+from database.search_engine import SearchEngine
+from utils.audit_logger import AuditLogger
+from core.session_manager import SessionManager
+from storage.storage_interface import StorageInterface, ImageRecord
 
 
 # Remove the duplicate ImageRecord definition since it's now imported

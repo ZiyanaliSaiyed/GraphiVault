@@ -474,6 +474,8 @@ class StorageInterface:
     def get_image(self, image_id: str) -> Optional[ImageRecord]:
         """Get image record by ID"""
         try:
+            cursor = self.conn.cursor()
+            cursor.execute("""
                 SELECT * FROM images WHERE id = ?
             """, (image_id,))
             

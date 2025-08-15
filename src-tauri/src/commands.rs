@@ -2,6 +2,8 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use std::collections::HashMap;
+use std::io::Write;
+use std::process::{Command, Stdio};
 use tauri::State;
 
 // Re-export database models
@@ -61,29 +63,48 @@ async fn call_python_backend(
     };
 
     // Prepare arguments
-    let mut cmd_args = vec![
-        python_backend_path
-            .join("main.py")
-            .to_string_lossy()
-            .to_string(),
-        method.to_string(), // Command as positional argument
+    let main_py_path = python_backend_path
+        .join("main.py")
+        .to_string_lossy()
+        .to_string();
+    let vault_path_str = vault_path.to_string_lossy().to_string();
+
+    let cmd_args = vec![
+        main_py_path,
+        method.to_string(),
         "--vault-path".to_string(),
-        vault_path.to_string_lossy().to_string(),
+        vault_path_str,
     ];
 
-    for (key, value) in args {
-        cmd_args.push(format!("--{}", key));
-        cmd_args.push(value.to_string().trim_matches('"').to_string());
-    }
+    // Serialize payload to JSON to be sent via stdin
+    let payload_json =
+        serde_json::to_string(args).map_err(|e| format!("Failed to serialize payload: {}", e))?;
 
     // Debug logging for path resolution
     println!("🐍 Python backend path: {:?}", python_backend_path);
     println!("🐍 Main.py path: {:?}", python_backend_path.join("main.py"));
     println!("🐍 Command args: {:?}", cmd_args);
+    // println!("🐍 Payload (stdin): {}", payload_json); // Can be too verbose
 
-    let output = std::process::Command::new("python")
+    let mut child = Command::new("python")
         .args(&cmd_args)
-        .output()
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn Python backend process: {}", e))?;
+
+    // Write payload to stdin in a separate thread to avoid deadlocks
+    let stdin_handle = child.stdin.take().ok_or("Failed to open stdin")?;
+    std::thread::spawn(move || {
+        let mut stdin = stdin_handle;
+        stdin
+            .write_all(payload_json.as_bytes())
+            .expect("Failed to write to stdin");
+    });
+
+    let output = child
+        .wait_with_output()
         .map_err(|e| format!("Failed to execute Python backend: {}", e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -372,8 +393,11 @@ pub async fn add_image_from_frontend(
     tags: Vec<String>,
     password: Option<String>, // Add optional password parameter
 ) -> Result<PythonBackendResponse, String> {
-    println!("🔧 Rust: add_image_from_frontend called with {} tags", tags.len());
-    
+    println!(
+        "🔧 Rust: add_image_from_frontend called with {} tags",
+        tags.len()
+    );
+
     let mut args = HashMap::new();
     args.insert(
         "file_contents".to_string(),
