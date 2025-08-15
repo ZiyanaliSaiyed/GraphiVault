@@ -10,8 +10,12 @@
         selected ? 'border-primary shadow-lg' : 'border-transparent hover:border-base-300'
       ]"
     >
-      <!-- Placeholder Image -->
-      <div class="w-full h-full bg-base-200 flex items-center justify-center">
+      <!-- Image Display -->
+      <div v-if="decryptedImageSrc" class="w-full h-full flex items-center justify-center">
+        <img :src="decryptedImageSrc" alt="Image" class="object-cover w-full h-full" />
+      </div>
+      <!-- Placeholder if not loaded -->
+      <div v-else class="w-full h-full bg-base-200 flex items-center justify-center">
         <div class="text-center">
           <div class="text-2xl mb-2">🖼️</div>
           <div class="text-xs text-base-content/50 px-2">
@@ -89,6 +93,8 @@
 
 <script setup lang="ts">
 import { format } from 'date-fns'
+import { ref, onMounted } from 'vue'
+import { tauriAPI } from '../utils/tauri'
 import type { ImageFile } from '../stores/vault'
 
 interface Props {
@@ -101,6 +107,8 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   toggleSelect: [id: string]
 }>()
+
+const decryptedImageSrc = ref<string | null>(null)
 
 const toggleSelect = () => {
   emit('toggleSelect', props.image.id)
@@ -117,4 +125,17 @@ const formatFileSize = (bytes: number): string => {
 const formatDate = (date: Date): string => {
   return format(date, 'MMM dd')
 }
+
+onMounted(async () => {
+  if (props.image.isEncrypted) {
+    try {
+      const result = await tauriAPI.getDecryptedImage(Number(props.image.id))
+      if (result.success && result.data?.image_data) {
+        decryptedImageSrc.value = `data:image/png;base64,${result.data.image_data}`
+      }
+    } catch (err) {
+      decryptedImageSrc.value = null
+    }
+  }
+})
 </script>

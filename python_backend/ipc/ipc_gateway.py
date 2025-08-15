@@ -129,17 +129,27 @@ class IPCGateway:
     def lock_vault(self) -> Dict[str, Any]:
         """Lock the vault"""
         try:
-            if self.core:
-                if self.core.lock_vault():
-                    return {
-                        'success': True,
-                        'message': 'Vault locked successfully'
-                    }
+            # If core is not initialized, the vault is already locked
+            if not self.core:
+                return {
+                    'success': True,
+                    'message': 'Vault is already locked'
+                }
             
-            return {
-                'success': False,
-                'error': 'Failed to lock vault'
-            }
+            # Try to lock the vault
+            if self.core.lock_vault():
+                # Clear the core and storage references
+                self.core = None
+                self.storage = None
+                return {
+                    'success': True,
+                    'message': 'Vault locked successfully'
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': 'Failed to lock vault core'
+                }
             
         except Exception as e:
             return {
@@ -190,15 +200,50 @@ class IPCGateway:
                 'error': f'Status check error: {str(e)}'
             }
     
-    def add_image(self, file_path: str, tags: List[str] = None, 
+    def add_image(self, file_contents: str, tags: List[str] = None, 
                   metadata: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Add image to vault"""
+        """Add image to vault from base64 encoded string"""
         try:
             if not self.core:
                 return {'success': False, 'error': 'Vault not initialized'}
             
-            image_record = self.core.add_image(file_path, tags or [], metadata or {})
+            import base64
+            import tempfile
             
+            # Log received parameters
+            print(f"Received add_image call with tags: {tags}, type: {type(tags)}", file=sys.stderr)
+            
+            # Ensure tags is a list
+            if tags is None:
+                tags = []
+            elif not isinstance(tags, list):
+                print(f"Tags is not a list: {tags}, attempting to convert", file=sys.stderr)
+                try:
+                    # Try to convert tags to a list if it's a string
+                    if isinstance(tags, str):
+                        tags = json.loads(tags)
+                    else:
+                        tags = list(tags)
+                except Exception as e:
+                    print(f"Could not convert tags to list: {e}", file=sys.stderr)
+                    tags = []
+            
+            # Decode the base64 string
+            try:
+                image_data = base64.b64decode(file_contents)
+            except (base64.binascii.Error, TypeError) as e:
+                return {'success': False, 'error': f'Invalid base64 data: {e}'}
+
+            # Write to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".tmp") as tmp_file:
+                tmp_file.write(image_data)
+                temp_file_path = tmp_file.name
+
+            image_record = self.core.add_image(temp_file_path, tags or [], metadata or {})
+            
+            # Clean up the temporary file
+            Path(temp_file_path).unlink()
+
             if image_record:
                 # Store in database
                 if self.storage and self.storage.store_image(image_record):
@@ -321,6 +366,24 @@ class IPCGateway:
         try:
             if not self.core or not self.storage:
                 return {'success': False, 'error': 'Vault not initialized'}
+            
+            # Log received parameters
+            print(f"Received search_images call with query: {query}, tag_filters: {tag_filters}, type: {type(tag_filters)}", file=sys.stderr)
+            
+            # Ensure tag_filters is a list
+            if tag_filters is None:
+                tag_filters = []
+            elif not isinstance(tag_filters, list):
+                print(f"tag_filters is not a list: {tag_filters}, attempting to convert", file=sys.stderr)
+                try:
+                    # Try to convert tag_filters to a list if it's a string
+                    if isinstance(tag_filters, str):
+                        tag_filters = json.loads(tag_filters)
+                    else:
+                        tag_filters = list(tag_filters)
+                except Exception as e:
+                    print(f"Could not convert tag_filters to list: {e}", file=sys.stderr)
+                    tag_filters = []
             
             # Get all images for searching (in a real implementation, this would be optimized)
             all_records = self.storage.get_all_images()
@@ -531,7 +594,7 @@ def main():
     parser.add_argument('command', help='Command to execute')
     parser.add_argument('--vault-path', required=True, help='Path to vault directory')
     parser.add_argument('--password', help='Master password')
-    parser.add_argument('--file-path', help='File path for operations')
+    parser.add_argument('--file-contents', help='File contents for operations (base64 encoded)')
     parser.add_argument('--image-id', help='Image ID for operations')
     parser.add_argument('--output-path', help='Output path for operations')
     parser.add_argument('--query', help='Search query')
@@ -547,10 +610,32 @@ def main():
     try:
         gateway = IPCGateway(args.vault_path)
         
-        # Parse JSON arguments
-        tags = json.loads(args.tags) if args.tags else []
-        metadata = json.loads(args.metadata) if args.metadata else {}
-        config = json.loads(args.config) if args.config else {}
+        # Enhanced debugging for received arguments
+        print(f"Command: {args.command}", file=sys.stderr)
+        print(f"Vault path: {args.vault_path}", file=sys.stderr)
+        if args.tags:
+            print(f"Raw tags value: {args.tags!r}", file=sys.stderr)
+        if args.metadata:
+            print(f"Raw metadata value: {args.metadata!r}", file=sys.stderr)
+        
+        # Parse JSON arguments with enhanced error handling
+        try:
+            tags = json.loads(args.tags) if args.tags else []
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"Error parsing tags: {e}, raw value: {args.tags!r}", file=sys.stderr)
+            tags = []
+            
+        try:
+            metadata = json.loads(args.metadata) if args.metadata else {}
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"Error parsing metadata: {e}, raw value: {args.metadata!r}", file=sys.stderr)
+            metadata = {}
+            
+        try:
+            config = json.loads(args.config) if args.config else {}
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"Error parsing config: {e}, raw value: {args.config!r}", file=sys.stderr)
+            config = {}
         
         # Execute command
         result = None
@@ -574,10 +659,10 @@ def main():
             result = gateway.get_vault_status()
         
         elif args.command == 'add_image':
-            if not args.file_path:
-                result = {'success': False, 'error': 'File path required'}
+            if not args.file_contents:
+                result = {'success': False, 'error': 'File contents required'}
             else:
-                result = gateway.add_image(args.file_path, tags, metadata)
+                result = gateway.add_image(args.file_contents, tags, metadata)
         
         elif args.command == 'get_image':
             if not args.image_id:

@@ -39,8 +39,7 @@ fn main() {
             commands::get_vault_status,
             commands::unlock_vault,
             commands::lock_vault,
-            commands::vault_exists,
-            commands::process_image_file,
+            commands::add_image_from_frontend,
             commands::search_images,
             commands::get_decrypted_image,
             commands::get_image_thumbnail

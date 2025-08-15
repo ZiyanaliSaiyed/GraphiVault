@@ -20,12 +20,13 @@ async fn call_python_backend(
     method: &str,
     args: &HashMap<String, serde_json::Value>,
 ) -> Result<PythonBackendResponse, String> {
-    let app_data_dir = app_handle
+    let _app_data_dir = app_handle
         .path_resolver()
         .app_data_dir()
         .ok_or("Failed to get app data directory")?;
 
-    let vault_path = app_data_dir.join("vault");
+    // Use test vault for now
+    let vault_path = std::path::PathBuf::from("D:\\GraphiVault\\test_vault");
 
     // In development, look for python_backend in the project root
     // In production, look for it in the resource directory
@@ -365,15 +366,16 @@ pub async fn lock_vault(app_handle: tauri::AppHandle) -> Result<PythonBackendRes
 }
 
 #[tauri::command]
-pub async fn process_image_file(
+pub async fn add_image_from_frontend(
     app_handle: tauri::AppHandle,
-    file_path: String,
+    file_contents: String, // Expecting base64 encoded file
     tags: Vec<String>,
+    password: Option<String>, // Add optional password parameter
 ) -> Result<PythonBackendResponse, String> {
     let mut args = HashMap::new();
     args.insert(
-        "file-path".to_string(),
-        serde_json::Value::String(file_path),
+        "file_contents".to_string(),
+        serde_json::Value::String(file_contents),
     );
     args.insert(
         "tags".to_string(),
@@ -381,6 +383,11 @@ pub async fn process_image_file(
             serde_json::to_string(&tags).unwrap_or_else(|_| "[]".to_string()),
         ),
     );
+
+    // Add password if provided
+    if let Some(pwd) = password {
+        args.insert("password".to_string(), serde_json::Value::String(pwd));
+    }
 
     call_python_backend(&app_handle, "add_image", &args).await
 }
@@ -438,10 +445,4 @@ pub async fn get_vault_status(
 ) -> Result<PythonBackendResponse, String> {
     let args = HashMap::new();
     call_python_backend(&app_handle, "get_vault_status", &args).await
-}
-
-#[tauri::command]
-pub async fn vault_exists(app_handle: tauri::AppHandle) -> Result<PythonBackendResponse, String> {
-    let args = HashMap::new();
-    call_python_backend(&app_handle, "vault_exists", &args).await
 }

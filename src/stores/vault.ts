@@ -40,6 +40,9 @@ export const useVaultStore = defineStore('vault', () => {
   const isLoading = ref(false)
   const isVaultLocked = ref(true)
   const searchResults = ref<any[]>([])
+  
+  // Session storage for vault password (in memory only, cleared on page refresh)
+  const vaultPassword = ref<string | null>(null)
 
   const filteredImages = computed(() => {
     let filtered = images.value
@@ -124,6 +127,14 @@ export const useVaultStore = defineStore('vault', () => {
 
   const setVaultLocked = (locked: boolean) => {
     isVaultLocked.value = locked
+    // Clear password when vault is locked
+    if (locked) {
+      vaultPassword.value = null
+    }
+  }
+  
+  const setVaultPassword = (password: string | null) => {
+    vaultPassword.value = password
   }
 
   const clearImages = () => {
@@ -207,6 +218,7 @@ export const useVaultStore = defineStore('vault', () => {
     isLoading,
     isVaultLocked,
     searchResults,
+    vaultPassword,
     
     // Computed
     filteredImages,
@@ -219,6 +231,7 @@ export const useVaultStore = defineStore('vault', () => {
     clearSelection,
     initialize,
     setVaultLocked,
+    setVaultPassword,
     clearImages,
     setSearchResults,
     refreshImages,

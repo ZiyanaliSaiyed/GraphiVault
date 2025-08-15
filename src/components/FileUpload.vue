@@ -40,6 +40,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { addImage } from '@/utils/tauri'
+import { useVaultStore } from '@/stores/vault'
 
 interface Props {
   disabled?: boolean
@@ -52,6 +54,8 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   filesSelected: [files: File[]]
 }>()
+
+const vaultStore = useVaultStore()
 
 const fileInput = ref<HTMLInputElement>()
 const isUploading = ref(false)
@@ -104,6 +108,28 @@ const processFiles = async (files: File[]) => {
     })
     
     if (validFiles.length > 0) {
+      // Process each file
+      for (const file of validFiles) {
+        try {
+          // Read the file as a base64 string
+          const base64String = await readFileAsBase64(file)
+          console.log(`Converting ${file.name} to base64`)
+          
+          // Set default tags
+          const tags = ['imported', 'dashboard-upload']
+          
+          console.log(`Uploading ${file.name} with tags:`, tags)
+          
+          // Call the backend to add the image
+          await addImage(base64String, tags, vaultStore.vaultPassword || undefined)
+          
+          console.log(`Successfully uploaded ${file.name}`)
+        } catch (error) {
+          console.error(`Error processing file ${file.name}:`, error)
+        }
+      }
+      
+      // Emit the event for the parent component
       emit('filesSelected', validFiles)
     }
   } catch (error) {
@@ -115,6 +141,27 @@ const processFiles = async (files: File[]) => {
       fileInput.value.value = ''
     }
   }
+}
+
+// Helper function to read a file as a base64 string
+const readFileAsBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        // The result will be in the format: "data:image/png;base64,iVBORw0KGgo..."
+        // We need to strip the prefix "data:image/png;base64,"
+        const base64String = (event.target.result as string).split(',')[1]
+        resolve(base64String)
+      } else {
+        reject(new Error('Failed to read file'))
+      }
+    }
+    reader.onerror = (error) => {
+      reject(error)
+    }
+    reader.readAsDataURL(file)
+  })
 }
 
 const handleGlobalDragOver = (event: DragEvent) => {

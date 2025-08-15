@@ -116,11 +116,15 @@ const isPasswordValid = computed(() => {
 const checkVaultStatus = async () => {
   try {
     console.log('🔍 Checking vault status...')
-    // A more reliable way to check for initialization is to see if the vault config exists.
-    const vaultExists = await tauriAPI.vaultExists()
-    console.log('📊 Vault existence check:', vaultExists)
+    // Check the vault status using the proper API
+    const statusResponse = await tauriAPI.getVaultStatus()
+    console.log('📊 Vault status response:', statusResponse)
     
-    isInitialized.value = vaultExists
+    if (statusResponse.success && statusResponse.data) {
+      isInitialized.value = statusResponse.data.vault_exists === true
+    } else {
+      isInitialized.value = false
+    }
     console.log('🏁 Vault initialization status:', isInitialized.value)
 
   } catch (error: any) {
@@ -172,6 +176,8 @@ const handleSubmit = async () => {
       // Update vault store state
       console.log('✅ Updating vault store state to unlocked')
       vaultStore.setVaultLocked(false)
+      // Store password for future operations
+      vaultStore.setVaultPassword(password.value)
       
       // Emit appropriate event
       if (isInitialized.value) {
