@@ -98,42 +98,53 @@ const processFiles = async (files: File[]) => {
       const isValidSize = file.size <= 50 * 1024 * 1024 // 50MB limit
       
       if (!isValidType) {
-        console.warn(`Skipping ${file.name}: Not an image file`)
+        console.warn(`❌ Skipping ${file.name}: Not an image file (${file.type})`)
       }
       if (!isValidSize) {
-        console.warn(`Skipping ${file.name}: File too large (max 50MB)`)
+        console.warn(`❌ Skipping ${file.name}: File too large (${(file.size / 1024 / 1024).toFixed(1)}MB, max 50MB)`)
       }
       
       return isValidType && isValidSize
     })
     
+    if (validFiles.length === 0) {
+      console.error('❌ No valid image files to upload')
+      return
+    }
+    
+    console.log(`📤 Processing ${validFiles.length} valid image files`)
+    
     if (validFiles.length > 0) {
       // Process each file
       for (const file of validFiles) {
         try {
+          console.log(`🔄 Processing: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`)
+          
           // Read the file as a base64 string
           const base64String = await readFileAsBase64(file)
-          console.log(`Converting ${file.name} to base64`)
+          console.log(`✅ Converted ${file.name} to base64 (${base64String.length} chars)`)
           
           // Set default tags
           const tags = ['imported', 'dashboard-upload']
           
-          console.log(`Uploading ${file.name} with tags:`, tags)
+          console.log(`📤 Uploading ${file.name} with tags:`, tags)
           
           // Call the backend to add the image
-          await addImage(base64String, tags, vaultStore.vaultPassword || undefined)
+          const result = await addImage(base64String, tags, vaultStore.vaultPassword || undefined)
           
-          console.log(`Successfully uploaded ${file.name}`)
+          console.log(`✅ Successfully uploaded ${file.name}:`, result)
         } catch (error) {
-          console.error(`Error processing file ${file.name}:`, error)
+          console.error(`❌ Error processing file ${file.name}:`, error)
         }
       }
       
       // Emit the event for the parent component
       emit('filesSelected', validFiles)
+      
+      console.log(`🎉 Upload process completed for ${validFiles.length} files`)
     }
   } catch (error) {
-    console.error('Error processing files:', error)
+    console.error('❌ Error processing files:', error)
   } finally {
     isUploading.value = false
     // Clear the input

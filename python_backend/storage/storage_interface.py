@@ -22,15 +22,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # GraphiVault Database Models
 @dataclass
 class ImageRecord:
-    """GraphiVault image record with encrypted metadata"""
-    id: int
-    file_hash: str  # SHA-512 hash of original file for deduplication
-    file_name: str  # Encrypted original filename
-    storage_path: str  # Internal vault-relative path
-    created_at: datetime
-    updated_at: datetime
-    file_size: int  # Size in bytes
-    is_deleted: bool = False
+    """Secure image record with encrypted metadata"""
+    id: str
+    name: str
+    encrypted_path: str
+    original_size: int
+    encrypted_size: int
+    mime_type: str
+    file_hash: str
+    date_added: datetime
+    date_modified: datetime
+    encrypted_tags: bytes
+    encrypted_metadata: bytes
+    thumbnail_path: Optional[str] = None
+    is_encrypted: bool = True
 
 @dataclass
 class TagRecord:
@@ -122,14 +127,19 @@ class StorageInterface:
                 # Create images table - core metadata for each image file
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS images (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        encrypted_path TEXT NOT NULL,
+                        original_size INTEGER NOT NULL,
+                        encrypted_size INTEGER NOT NULL,
+                        mime_type TEXT NOT NULL,
                         file_hash TEXT NOT NULL UNIQUE,
-                        file_name TEXT NOT NULL,
-                        storage_path TEXT NOT NULL,
-                        created_at TEXT NOT NULL,
-                        updated_at TEXT NOT NULL,
-                        file_size INTEGER NOT NULL,
-                        is_deleted BOOLEAN NOT NULL DEFAULT 0
+                        date_added TEXT NOT NULL,
+                        date_modified TEXT NOT NULL,
+                        encrypted_tags BLOB NOT NULL,
+                        encrypted_metadata BLOB NOT NULL,
+                        thumbnail_path TEXT,
+                        is_encrypted BOOLEAN NOT NULL DEFAULT 1
                     )
                 """)
                 
@@ -230,24 +240,31 @@ class StorageInterface:
     # GraphiVault Database Operations
     
     def store_image(self, image_record: ImageRecord) -> bool:
-        """Store an image record according to GraphiVault schema"""
+        """Store an image record in the database"""
         try:
             conn = self._get_connection()
             
             with conn:
                 conn.execute("""
                     INSERT INTO images (
-                        file_hash, file_name, storage_path, created_at, 
-                        updated_at, file_size, is_deleted
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        id, name, encrypted_path, original_size, encrypted_size,
+                        mime_type, file_hash, date_added, date_modified,
+                        encrypted_tags, encrypted_metadata, thumbnail_path, is_encrypted
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
+                    image_record.id,
+                    image_record.name,
+                    image_record.encrypted_path,
+                    image_record.original_size,
+                    image_record.encrypted_size,
+                    image_record.mime_type,
                     image_record.file_hash,
-                    image_record.file_name,  # Should be encrypted
-                    image_record.storage_path,
-                    image_record.created_at.isoformat(),
-                    image_record.updated_at.isoformat(),
-                    image_record.file_size,
-                    image_record.is_deleted
+                    image_record.date_added.isoformat(),
+                    image_record.date_modified.isoformat(),
+                    image_record.encrypted_tags,
+                    image_record.encrypted_metadata,
+                    image_record.thumbnail_path,
+                    image_record.is_encrypted
                 ))
             
             return True
@@ -455,11 +472,8 @@ class StorageInterface:
             return False
     
     def get_image(self, image_id: str) -> Optional[ImageRecord]:
-        """Get an image record by ID"""
+        """Get image record by ID"""
         try:
-            conn = self._get_connection()
-            
-            cursor = conn.execute("""
                 SELECT * FROM images WHERE id = ?
             """, (image_id,))
             
@@ -473,11 +487,11 @@ class StorageInterface:
             return None
     
     def get_all_images(self, limit: int = None, offset: int = 0) -> List[ImageRecord]:
-        """Get all image records with optional pagination"""
+        """Get all images with pagination"""
         try:
             conn = self._get_connection()
             
-            query = "SELECT * FROM images ORDER BY date_added DESC"
+            query = "SELECT * FROM images WHERE is_encrypted = 1 ORDER BY date_added DESC"
             params = []
             
             if limit:
@@ -744,16 +758,7 @@ class StorageInterface:
             
             row = cursor.fetchone()
             if row:
-                stats.update({
-                    'total_images': row['total_images'] or 0,
-                    'total_original_size': row['total_original_size'] or 0,
-                    'total_encrypted_size': row['total_encrypted_size'] or 0,
-                    'average_file_size': row['avg_file_size'] or 0,
-                    'oldest_image': row['oldest_image'],
-                    'newest_image': row['newest_image']
-                })
-            
-            # File type distribution
+                return self._row_to_image_record(row)
             cursor = conn.execute("""
                 SELECT mime_type, COUNT(*) as count
                 FROM images
@@ -806,7 +811,7 @@ class StorageInterface:
     def _row_to_image_record(self, row: sqlite3.Row) -> ImageRecord:
         """Convert database row to ImageRecord"""
         return ImageRecord(
-            id=row['id'],
+            id=str(row['id']),
             name=row['name'],
             encrypted_path=row['encrypted_path'],
             original_size=row['original_size'],

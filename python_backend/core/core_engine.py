@@ -256,49 +256,70 @@ class GraphiVaultCore:
         6. Store everything securely
         """
         if not self._is_initialized:
-            raise RuntimeError("Vault not initialized or unlocked")
+            print("❌ Core Engine: Vault not initialized or unlocked", file=sys.stderr)
+            return None
         
         try:
+            print(f"🔄 Core Engine: Processing image upload: {file_path}", file=sys.stderr)
+            
             file_path = Path(file_path)
             if not file_path.exists():
-                raise FileNotFoundError(f"File not found: {file_path}")
+                print(f"❌ Core Engine: File not found: {file_path}", file=sys.stderr)
+                return None
             
             # Validate file type and size
+            print(f"🔍 Core Engine: Validating image: {file_path}", file=sys.stderr)
             if not self.image_processor.validate_image(file_path):
-                raise ValueError("Invalid image file")
+                print(f"❌ Core Engine: Image validation failed: {file_path}", file=sys.stderr)
+                return None
+            
+            print(f"✅ Core Engine: Image validation passed: {file_path}", file=sys.stderr)
             
             # Calculate file hash to check for duplicates
+            print(f"🔍 Core Engine: Calculating file hash", file=sys.stderr)
             file_hash = self._calculate_file_hash(file_path)
             if self._is_duplicate(file_hash):
-                raise ValueError("Duplicate file already exists in vault")
+                print(f"⚠️ Core Engine: Duplicate file detected: {file_hash}", file=sys.stderr)
+                return None
             
             # Generate unique ID
             image_id = str(uuid.uuid4())
+            print(f"🆔 Core Engine: Generated image ID: {image_id}", file=sys.stderr)
             
             # Read original file
             original_size = file_path.stat().st_size
+            print(f"📏 Core Engine: Original file size: {original_size} bytes", file=sys.stderr)
             
             # Encrypt the file
             encrypted_path = self.vault_path / self.config['vault']['data_dir'] / f"{image_id}.enc"
+            print(f"🔐 Core Engine: Encrypting to: {encrypted_path}", file=sys.stderr)
             encrypted_size = self.crypto.encrypt_file(str(file_path), str(encrypted_path))
+            print(f"✅ Core Engine: Encryption complete, size: {encrypted_size} bytes", file=sys.stderr)
             
             # Create thumbnail
             thumbnail_path = None
             try:
                 thumb_path = self.vault_path / self.config['vault']['thumbnails_dir'] / f"{image_id}_thumb.jpg"
+                print(f"🖼️ Core Engine: Creating thumbnail: {thumb_path}", file=sys.stderr)
                 if self.image_processor.create_thumbnail(str(file_path), str(thumb_path)):
                     thumbnail_path = str(thumb_path)
+                    print(f"✅ Core Engine: Thumbnail created successfully", file=sys.stderr)
+                else:
+                    print(f"⚠️ Core Engine: Thumbnail creation failed", file=sys.stderr)
             except Exception:
+                print(f"⚠️ Core Engine: Thumbnail creation exception", file=sys.stderr)
                 pass  # Thumbnail creation is optional
             
             # Prepare metadata
             full_metadata = {
                 'original_filename': file_path.name,
                 'file_extension': file_path.suffix,
-                'creation_time': datetime.now(timezone.utc).isoformat(),            **(metadata or {})
+                'creation_time': datetime.now(timezone.utc).isoformat(),
+                **(metadata or {})
             }
             
             # Encrypt tags and metadata
+            print(f"🔐 Core Engine: Encrypting tags and metadata", file=sys.stderr)
             encrypted_tags = self.tag_manager.encrypt_tags(tags or [])
             encrypted_metadata = self.crypto.encrypt_data(json.dumps(full_metadata, ensure_ascii=False).encode('utf-8'))
             
@@ -318,8 +339,13 @@ class GraphiVaultCore:
                 thumbnail_path=thumbnail_path
             )
             
-            # Store in database (this would be handled by storage layer)
-            self._store_image_record(image_record)
+            print(f"💾 Core Engine: Storing image record in database", file=sys.stderr)
+            # Store in database
+            if not self._store_image_record(image_record):
+                print(f"❌ Core Engine: Failed to store image record in database", file=sys.stderr)
+                return None
+            
+            print(f"✅ Core Engine: Image record stored successfully", file=sys.stderr)
             
             self.audit_logger.log_event('image_added', {
                 'timestamp': datetime.now(timezone.utc).isoformat(),
@@ -328,9 +354,13 @@ class GraphiVaultCore:
                 'size': original_size
             })
             
+            print(f"🎉 Core Engine: Image upload completed successfully: {image_id}", file=sys.stderr)
             return image_record
             
         except Exception as e:
+            print(f"❌ Core Engine: Exception during image upload: {str(e)}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
             self.audit_logger.log_event('image_add_error', {
                 'timestamp': datetime.now(timezone.utc).isoformat(),
                 'error': str(e),
@@ -500,7 +530,8 @@ class GraphiVaultCore:
     def _store_image_record(self, record: ImageRecord) -> None:
         """Store image record in database"""
         if self.storage:
-            self.storage.store_image(record)
+            return self.storage.store_image(record)
+        return False
     
     def _get_image_record(self, image_id: str) -> Optional[ImageRecord]:
         """Get image record from database"""

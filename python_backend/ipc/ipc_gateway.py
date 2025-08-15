@@ -207,6 +207,9 @@ class IPCGateway:
             if not self.core:
                 return {'success': False, 'error': 'Vault not initialized'}
             
+            if not self.core._is_initialized:
+                return {'success': False, 'error': 'Vault not unlocked'}
+            
             import base64
             import tempfile
             
@@ -228,35 +231,52 @@ class IPCGateway:
                     print(f"Could not convert tags to list: {e}", file=sys.stderr)
                     tags = []
             
+            # Validate base64 input
+            if not file_contents or len(file_contents) < 100:
+                return {'success': False, 'error': 'Invalid or empty file contents'}
+            
             # Decode the base64 string
             try:
                 image_data = base64.b64decode(file_contents)
+                print(f"Successfully decoded base64 data: {len(image_data)} bytes", file=sys.stderr)
             except (base64.binascii.Error, TypeError) as e:
                 return {'success': False, 'error': f'Invalid base64 data: {e}'}
 
-            # Write to a temporary file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".tmp") as tmp_file:
+            # Determine file extension from image data
+            file_extension = self._detect_image_format(image_data)
+            if not file_extension:
+                return {'success': False, 'error': 'Unable to detect image format'}
+            
+            # Write to a temporary file with proper extension
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as tmp_file:
                 tmp_file.write(image_data)
                 temp_file_path = tmp_file.name
+            
+            print(f"Created temporary file: {temp_file_path}", file=sys.stderr)
 
+            # Add image through core engine
             image_record = self.core.add_image(temp_file_path, tags or [], metadata or {})
             
             # Clean up the temporary file
-            Path(temp_file_path).unlink()
+            try:
+                Path(temp_file_path).unlink()
+                print(f"Cleaned up temporary file: {temp_file_path}", file=sys.stderr)
+            except Exception as e:
+                print(f"Warning: Could not clean up temp file {temp_file_path}: {e}", file=sys.stderr)
 
             if image_record:
-                # Store in database
-                if self.storage and self.storage.store_image(image_record):
-                    return {
-                        'success': True,
-                        'image_id': image_record.id,
-                        'message': 'Image added successfully'
+                print(f"Image successfully added with ID: {image_record.id}", file=sys.stderr)
+                return {
+                    'success': True,
+                    'image_id': image_record.id,
+                    'message': 'Image added successfully',
+                    'data': {
+                        'id': image_record.id,
+                        'name': image_record.name,
+                        'size': image_record.original_size,
+                        'mime_type': image_record.mime_type
                     }
-                else:
-                    return {
-                        'success': False,
-                        'error': 'Failed to store image in database'
-                    }
+                }
             else:
                 return {
                     'success': False,
@@ -264,10 +284,35 @@ class IPCGateway:
                 }
                 
         except Exception as e:
+            print(f"Exception in add_image: {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
             return {
                 'success': False,
                 'error': f'Add image error: {str(e)}'
             }
+    
+    def _detect_image_format(self, image_data: bytes) -> Optional[str]:
+        """Detect image format from binary data"""
+        try:
+            # Check magic bytes for common image formats
+            if image_data.startswith(b'\xff\xd8\xff'):
+                return 'jpg'
+            elif image_data.startswith(b'\x89PNG\r\n\x1a\n'):
+                return 'png'
+            elif image_data.startswith(b'GIF87a') or image_data.startswith(b'GIF89a'):
+                return 'gif'
+            elif image_data.startswith(b'RIFF') and b'WEBP' in image_data[:12]:
+                return 'webp'
+            elif image_data.startswith(b'BM'):
+                return 'bmp'
+            elif image_data.startswith(b'II*\x00') or image_data.startswith(b'MM\x00*'):
+                return 'tiff'
+            else:
+                # Default to jpg if we can't detect
+                return 'jpg'
+        except Exception:
+            return 'jpg'
     
     def get_image(self, image_id: str, decrypt: bool = False) -> Dict[str, Any]:
         """Get image from vault"""
@@ -691,6 +736,9 @@ def main():
         
         elif args.command == 'get_vault_status':
             result = gateway.get_vault_status()
+        
+        elif args.command == 'vault_exists':
+            result = gateway.vault_exists()
         
         elif args.command == 'encrypt_file':
             if not args.file_path or not args.password:

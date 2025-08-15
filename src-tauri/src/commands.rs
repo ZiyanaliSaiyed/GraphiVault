@@ -372,6 +372,8 @@ pub async fn add_image_from_frontend(
     tags: Vec<String>,
     password: Option<String>, // Add optional password parameter
 ) -> Result<PythonBackendResponse, String> {
+    println!("🔧 Rust: add_image_from_frontend called with {} tags", tags.len());
+    
     let mut args = HashMap::new();
     args.insert(
         "file_contents".to_string(),
@@ -386,10 +388,15 @@ pub async fn add_image_from_frontend(
 
     // Add password if provided
     if let Some(pwd) = password {
+        println!("🔐 Rust: Password provided for image upload");
         args.insert("password".to_string(), serde_json::Value::String(pwd));
+    } else {
+        println!("⚠️ Rust: No password provided for image upload");
     }
 
-    call_python_backend(&app_handle, "add_image", &args).await
+    let result = call_python_backend(&app_handle, "add_image", &args).await;
+    println!("📊 Rust: Python backend result: {:?}", result);
+    result
 }
 
 #[tauri::command]

@@ -51,42 +51,58 @@ class ImageProcessor:
         Validate image file for security and format compliance
         """
         try:
+            # Check if file exists
+            if not file_path.exists():
+                print(f"Image validation failed: File does not exist - {file_path}")
+                return False
+            
             # Check file size
             file_size = file_path.stat().st_size
             if file_size > self.config['max_file_size']:
+                print(f"Image validation failed: File too large - {file_size} bytes")
                 return False
             
             # Check file extension
             file_ext = file_path.suffix.lower().lstrip('.')
             if file_ext not in self.config['supported_formats']:
+                print(f"Image validation failed: Unsupported format - {file_ext}")
                 return False
             
             # Validate MIME type
             mime_type, _ = mimetypes.guess_type(str(file_path))
             if not mime_type or not mime_type.startswith('image/'):
+                print(f"Image validation failed: Invalid MIME type - {mime_type}")
                 return False
             
             # Try to open and validate image with PIL
-            with Image.open(file_path) as img:
-                # Verify image format
-                if img.format is None:
-                    return False
-                
-                # Check image dimensions (prevent extremely large images)
-                width, height = img.size
-                if width > 50000 or height > 50000:
-                    return False
-                
-                # Verify image integrity by loading a small portion
-                img.load()
-                
-                # Additional security checks
-                if not self._security_check(img):
-                    return False
+            if PIL_AVAILABLE:
+                with Image.open(file_path) as img:
+                    # Verify image format
+                    if img.format is None:
+                        print(f"Image validation failed: Unknown format")
+                        return False
+                    
+                    # Check image dimensions (prevent extremely large images)
+                    width, height = img.size
+                    if width > 50000 or height > 50000:
+                        print(f"Image validation failed: Dimensions too large - {width}x{height}")
+                        return False
+                    
+                    # Verify image integrity by loading a small portion
+                    img.load()
+                    
+                    # Additional security checks
+                    if not self._security_check(img):
+                        print(f"Image validation failed: Security check failed")
+                        return False
+            else:
+                print("Warning: PIL not available, skipping detailed image validation")
             
+            print(f"Image validation successful: {file_path}")
             return True
             
         except Exception:
+            print(f"Image validation failed: Exception during validation - {file_path}")
             return False
     
     def get_mime_type(self, file_path: Path) -> str:

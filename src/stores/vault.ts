@@ -150,25 +150,41 @@ export const useVaultStore = defineStore('vault', () => {
   const refreshImages = async () => {
     isLoading.value = true
     try {
-      const result = await tauriAPI.searchImages('', []) // Get all images
-      if (result.success && result.data?.results) {
-        // Convert backend results to ImageFile format
-        images.value = result.data.results.map((result: any) => ({
-          id: result.id,
-          name: result.name,
-          path: '', // Will be loaded on demand
-          size: result.size,
-          type: result.mime_type,
-          dateAdded: new Date(result.date_added),
-          dateModified: new Date(result.date_added),
-          tags: result.tags || [],
-          metadata: result.metadata || {},
-          isEncrypted: result.is_encrypted,
-          thumbnailPath: result.thumbnail_path
-        }))
+      console.log('🔄 Refreshing vault images...')
+      
+      // Try to get all images through search
+      const result = await tauriAPI.searchImages('', [])
+      
+      if (result.success) {
+        if (result.data?.results) {
+          console.log(`✅ Found ${result.data.results.length} images in vault`)
+          
+          // Convert backend results to ImageFile format
+          images.value = result.data.results.map((result: any) => ({
+            id: result.id,
+            name: result.name,
+            path: '', // Will be loaded on demand
+            size: result.size,
+            type: result.mime_type,
+            dateAdded: new Date(result.date_added),
+            dateModified: new Date(result.date_added),
+            tags: result.tags || [],
+            metadata: result.metadata || {},
+            isEncrypted: result.is_encrypted,
+            thumbnailPath: result.thumbnail_path
+          }))
+        } else {
+          console.log('📭 No images found in vault')
+          images.value = []
+        }
+      } else {
+        console.error('❌ Failed to refresh images:', result.error)
+        // Try fallback method if available
+        images.value = []
       }
     } catch (error) {
-      console.error('Error refreshing images:', error)
+      console.error('❌ Error refreshing images:', error)
+      images.value = []
     } finally {
       isLoading.value = false
     }
